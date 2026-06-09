@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Gamification.Api/Gamification.Api.csproj" />
+    <Project Path="src/Gamification.Application/Gamification.Application.csproj" />
+    <Project Path="src/Gamification.Domain/Gamification.Domain.csproj" />
+    <Project Path="src/Gamification.Infrastructure/Gamification.Infrastructure.csproj" />
+    <Project Path="src/Gamification.Messaging/Gamification.Messaging.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Gamification.Application.Tests/Gamification.Application.Tests.csproj" />
+    <Project Path="tests/Gamification.Domain.Tests/Gamification.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
