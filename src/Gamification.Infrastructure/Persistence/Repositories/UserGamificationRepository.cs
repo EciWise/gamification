@@ -1,0 +1,40 @@
+using System;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Gamification.Domain.Aggregates;
+using Gamification.Domain.Repositories;
+using Gamification.Domain.ValueObjects;
+
+namespace Gamification.Infrastructure.Persistence.Repositories
+{
+    public class UserGamificationRepository : IUserGamificationRepository
+    {
+        private readonly AppDbContext _context;
+
+        public UserGamificationRepository(AppDbContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
+        public async Task<UserGamification> GetByUserIdAsync(UserId userId)
+        {
+            return await _context.UserGamifications
+                .Include(u => u.CurrentLevel)
+                .FirstOrDefaultAsync(u => u.Id == userId.Value);
+        }
+
+        public async Task SaveAsync(UserGamification userGamification)
+        {
+            if (_context.Entry(userGamification).State == EntityState.Detached)
+            {
+                await _context.UserGamifications.AddAsync(userGamification);
+            }
+            else
+            {
+                _context.UserGamifications.Update(userGamification);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+    }
+}
