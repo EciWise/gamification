@@ -15,6 +15,27 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        // Load .env file if it exists, traversing upwards to find it
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var directory = new DirectoryInfo(currentDirectory);
+        while (directory != null && !File.Exists(Path.Combine(directory.FullName, ".env")))
+        {
+            directory = directory.Parent;
+        }
+
+        if (directory != null)
+        {
+            var dotenvPath = Path.Combine(directory.FullName, ".env");
+            foreach (var line in File.ReadAllLines(dotenvPath))
+            {
+                var parts = line.Split('=', 2, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 && !line.TrimStart().StartsWith("#"))
+                {
+                    Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+                }
+            }
+        }
+
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
@@ -42,9 +63,29 @@ public class Program
             }
         });
 
+        // Resolve Connection String
+        var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST");
+            var dbPort = Environment.GetEnvironmentVariable("POSTGRES_PORT") ?? "5432";
+            var dbName = Environment.GetEnvironmentVariable("POSTGRES_DB");
+            var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
+            var dbPass = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+
+            if (!string.IsNullOrEmpty(dbHost) && !string.IsNullOrEmpty(dbName) && !string.IsNullOrEmpty(dbUser))
+            {
+                connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};";
+            }
+            else
+            {
+                connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            }
+        }
+
         // Database
         builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(connectionString));
 
         // Repositories
         builder.Services.AddScoped<IUserGamificationRepository, UserGamificationRepository>();
@@ -79,6 +120,20 @@ builder.Services.AddHostedService<RankingJob>();
         {
             app.UseSwagger();
             app.UseSwaggerUI();
+        }
+
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            try
+            {
+                dbContext.Database.EnsureCreated();
+            }
+            catch (Exception ex)
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogError(ex, "An error occurred while creating/initializing the database.");
+            }
         }
 
         app.UseHttpsRedirection();

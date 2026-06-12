@@ -39,7 +39,7 @@ namespace Gamification.Infrastructure.Persistence
 
                     // Logic to calculate global ranking based on total points
                     var topUsers = await dbContext.UserGamifications
-                        .OrderByDescending(u => u.TotalPoints)
+                        .OrderByDescending(u => u.TotalPoints.Value)
                         .Take(100)
                         .ToListAsync(stoppingToken);
 

@@ -35,6 +35,9 @@ namespace Gamification.Infrastructure.Persistence
                 
                 entity.Ignore(e => e.UserId);
 
+                entity.Property<string>("display_name").HasColumnName("display_name").HasDefaultValue("User").IsRequired();
+                entity.Property<string>("avatar_url").HasColumnName("avatar_url").IsRequired(false);
+
                 entity.OwnsOne(e => e.TotalPoints, p => { p.Property(pt => pt.Value).HasColumnName("total_points"); });
                 entity.OwnsOne(e => e.ReputationScore, r => { r.Property(rs => rs.Value).HasColumnName("reputation_score"); });
 
@@ -57,8 +60,17 @@ namespace Gamification.Infrastructure.Persistence
             {
                 entity.ToTable("point_transactions");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.ActionType).HasConversion<string>();
-                entity.Ignore(e => e.UserId);
+                entity.Property(e => e.Id).HasColumnName("id");
+                
+                entity.Property(e => e.ActionType).HasConversion<string>().HasColumnName("action_type");
+                
+                entity.Property(e => e.UserId)
+                      .HasConversion(id => id.Value, value => new UserId(value))
+                      .HasColumnName("user_id");
+
+                entity.Property(e => e.SourceEventId).HasColumnName("source_event_id");
+                entity.Property(e => e.OccurredAt).HasColumnName("occurred_at");
+
                 entity.OwnsOne(e => e.Points, p => { p.Property(pt => pt.Value).HasColumnName("points"); });
                 entity.OwnsOne(e => e.IdempotencyKey, i => { i.Property(ik => ik.Value).HasColumnName("idempotency_key"); });
                 entity.OwnsOne(e => e.Description, d => { d.Property(desc => desc.Value).HasColumnName("description"); });
@@ -68,15 +80,23 @@ namespace Gamification.Infrastructure.Persistence
             {
                 entity.ToTable("level_definitions");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Name).HasColumnName("name").IsRequired();
                 entity.OwnsOne(e => e.MinPoints, p => { p.Property(pt => pt.Value).HasColumnName("min_points"); });
+                entity.Property<int>("display_order").HasColumnName("display_order").HasDefaultValue(0);
+                entity.Property<string>("icon_url").HasColumnName("icon_url").IsRequired(false);
             });
 
             modelBuilder.Entity<AchievementDefinition>(entity =>
             {
                 entity.ToTable("achievement_definitions");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description");
+                entity.Property(e => e.ImageUrl).HasColumnName("image_url");
+                entity.Property(e => e.StrategyKey).HasColumnName("strategy_key");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
                 entity.OwnsOne(e => e.CriteriaConfig, c => { c.Property(cc => cc.JsonRaw).HasColumnName("criteria_config").HasColumnType("jsonb"); });
             });
 
@@ -84,15 +104,27 @@ namespace Gamification.Infrastructure.Persistence
             {
                 entity.ToTable("user_achievements");
                 entity.HasKey(e => e.Id);
-                entity.Ignore(e => e.UserId);
-                entity.HasIndex("AchievementId").IsUnique();
+                entity.Property(e => e.Id).HasColumnName("id");
+                
+                entity.Property(e => e.UserId)
+                      .HasConversion(id => id.Value, value => new UserId(value))
+                      .HasColumnName("user_id");
+
+                entity.Property(e => e.UnlockedAt).HasColumnName("unlocked_at");
+
+                entity.HasOne(e => e.Achievement)
+                      .WithMany()
+                      .HasForeignKey("achievement_id");
+
+                entity.HasIndex("UserId", "achievement_id").IsUnique();
             });
 
             modelBuilder.Entity<Ranking>(entity =>
             {
                 entity.ToTable("rankings");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Type).HasConversion<string>();
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Type).HasConversion<string>().HasColumnName("ranking_type");
                 entity.OwnsOne(e => e.Period, p =>
                 {
                     p.Property(pr => pr.Start).HasColumnName("period_start");
@@ -106,14 +138,24 @@ namespace Gamification.Infrastructure.Persistence
             {
                 entity.ToTable("ranking_entries");
                 entity.HasKey(e => e.Id);
-                entity.Ignore(e => e.UserId);
+                entity.Property(e => e.Id).HasColumnName("id");
+                
+                entity.Property(e => e.UserId)
+                      .HasConversion(id => id.Value, value => new UserId(value))
+                      .HasColumnName("user_id");
+
+                entity.Property(e => e.Position).HasColumnName("position");
+                entity.Property(e => e.Score).HasColumnName("score");
+                entity.Property(e => e.ComputedAt).HasColumnName("computed_at");
             });
 
             modelBuilder.Entity<GamificationRule>(entity =>
             {
                 entity.ToTable("gamification_rules");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.ActionType).HasConversion<string>();
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ActionType).HasConversion<string>().HasColumnName("action_type");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
                 entity.OwnsOne(e => e.PointsAwarded, p => { p.Property(pt => pt.Value).HasColumnName("points_awarded"); });
             });
 
@@ -121,15 +163,35 @@ namespace Gamification.Infrastructure.Persistence
             {
                 entity.ToTable("user_level_history");
                 entity.HasKey(e => e.Id);
-                entity.Ignore(e => e.UserId);
+                entity.Property(e => e.Id).HasColumnName("id");
+                
+                entity.Property(e => e.UserId)
+                      .HasConversion(id => id.Value, value => new UserId(value))
+                      .HasColumnName("user_id");
+
+                entity.Property(e => e.AchievedAt).HasColumnName("achieved_at");
+
                 entity.OwnsOne(e => e.PointsAtThatMoment, p => { p.Property(pt => pt.Value).HasColumnName("points_at"); });
+
+                entity.HasOne(e => e.Level)
+                      .WithMany()
+                      .HasForeignKey("level_id");
             });
 
             modelBuilder.Entity<WeeklyActivity>(entity =>
             {
                 entity.ToTable("weekly_activity");
                 entity.HasKey(e => e.Id);
-                entity.Ignore(e => e.UserId);
+                entity.Property(e => e.Id).HasColumnName("id");
+                
+                entity.Property(e => e.UserId)
+                      .HasConversion(id => id.Value, value => new UserId(value))
+                      .HasColumnName("user_id");
+
+                entity.Property(e => e.WeekStart).HasColumnName("week_start");
+                entity.Property(e => e.ActionsCount).HasColumnName("actions_count");
+                entity.Property(e => e.RecordedAt).HasColumnName("recorded_at");
+
                 entity.OwnsOne(e => e.PointsEarned, p => { p.Property(pt => pt.Value).HasColumnName("points_earned"); });
             });
 
@@ -137,13 +199,22 @@ namespace Gamification.Infrastructure.Persistence
             {
                 entity.ToTable("outbox");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Payload).HasColumnType("jsonb");
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.EventType).HasColumnName("event_type");
+                entity.Property(e => e.AggregateId).HasColumnName("aggregate_id");
+                entity.Property(e => e.Payload).HasColumnName("payload").HasColumnType("jsonb");
+                entity.Property(e => e.OccurredAt).HasColumnName("occurred_at");
+                entity.Property(e => e.ProcessedAt).HasColumnName("processed_at");
+                entity.Property(e => e.RetryCount).HasColumnName("retry_count");
             });
 
             modelBuilder.Entity<ProcessedEvent>(entity =>
             {
                 entity.ToTable("processed_events");
                 entity.HasKey(e => e.EventId);
+                entity.Property(e => e.EventId).HasColumnName("event_id");
+                entity.Property(e => e.EventType).HasColumnName("event_type");
+                entity.Property(e => e.ProcessedAt).HasColumnName("processed_at");
             });
 
             modelBuilder.Ignore<Gamification.Domain.Events.DomainEvent>();

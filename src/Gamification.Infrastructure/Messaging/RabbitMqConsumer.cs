@@ -20,8 +20,8 @@ namespace Gamification.Infrastructure.Messaging
     {
         private readonly ILogger<RabbitMqConsumer> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private IConnection _connection;
-        private IChannel _channel;
+        private IConnection? _connection;
+        private IChannel? _channel;
 
         public RabbitMqConsumer(ILogger<RabbitMqConsumer> logger, IServiceProvider serviceProvider)
         {
@@ -29,19 +29,58 @@ namespace Gamification.Infrastructure.Messaging
             _serviceProvider = serviceProvider;
         }
 
-        private async Task InitializeRabbitMqListenerAsync()
+        private async Task InitializeRabbitMqListenerAsync(CancellationToken stoppingToken)
         {
-            var factory = new ConnectionFactory { HostName = "localhost" }; // Configured via IOptions in real project
-            _connection = await factory.CreateConnectionAsync();
-            _channel = await _connection.CreateChannelAsync();
-            await _channel.QueueDeclareAsync(queue: "gamification_events_queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
+            var host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+            var user = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
+            var pass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
+
+            var factory = new ConnectionFactory 
+            { 
+                HostName = host,
+                UserName = user,
+                Password = pass
+            };
+
+            int retryCount = 0;
+            int maxRetries = 10;
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    _logger.LogInformation("Connecting to RabbitMQ at {Host}...", host);
+                    _connection = await factory.CreateConnectionAsync(stoppingToken);
+                    _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
+                    await _channel.QueueDeclareAsync(queue: "gamification_events_queue", durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: stoppingToken);
+                    _logger.LogInformation("Successfully connected to RabbitMQ.");
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    retryCount++;
+                    if (retryCount >= maxRetries)
+                    {
+                        _logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts.", maxRetries);
+                        throw;
+                    }
+                    _logger.LogWarning("RabbitMQ connection failed. Retrying in 5 seconds... ({RetryCount}/{MaxRetries})", retryCount, maxRetries);
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                }
+            }
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await InitializeRabbitMqListenerAsync();
+            await InitializeRabbitMqListenerAsync(stoppingToken);
 
-            var consumer = new AsyncEventingBasicConsumer(_channel);
+            var channel = _channel;
+            if (channel == null)
+            {
+                _logger.LogError("RabbitMQ channel is null after initialization.");
+                return;
+            }
+
+            var consumer = new AsyncEventingBasicConsumer(channel);
             consumer.ReceivedAsync += async (model, ea) =>
             {
                 var body = ea.Body.ToArray();
@@ -51,7 +90,6 @@ namespace Gamification.Infrastructure.Messaging
 
                 try
                 {
-                    // This is a naive deserialization for scaffolding demonstration.
                     var eventPayload = JsonDocument.Parse(message).RootElement;
                     var eventType = eventPayload.GetProperty("eventType").GetString();
 
@@ -60,10 +98,10 @@ namespace Gamification.Infrastructure.Messaging
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
                     
                     var eventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString());
-                    if (await dbContext.ProcessedEvents.AnyAsync(e => e.EventId == eventId))
+                    if (await dbContext.ProcessedEvents.AnyAsync(e => e.EventId == eventId, cancellationToken: stoppingToken))
                     {
                         _logger.LogWarning("Event {EventId} already processed. Skipping.", eventId);
-                        await _channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
+                        await channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
                         return;
                     }
 
@@ -72,7 +110,7 @@ namespace Gamification.Infrastructure.Messaging
                         var command = new AssignPointsCommand
                         {
                             UserId = Guid.Parse(eventPayload.GetProperty("userId").GetString()),
-                            Points = 10, // Or query rule via repository
+                            Points = 10,
                             ActionType = ActionType.TutoriaCompletada,
                             SourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()),
                             Description = "Puntos por completar lección"
@@ -89,17 +127,16 @@ namespace Gamification.Infrastructure.Messaging
                     });
                     await dbContext.SaveChangesAsync(stoppingToken);
                     
-                    await _channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
+                    await channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error processing RabbitMQ message.");
-                    // Manage dead letter queue or basic nack based on retries
-                    await _channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false);
+                    await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
                 }
             };
 
-            await _channel.BasicConsumeAsync(queue: "gamification_events_queue", autoAck: false, consumer: consumer);
+            await channel.BasicConsumeAsync(queue: "gamification_events_queue", autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
         }
 
         public override void Dispose()
