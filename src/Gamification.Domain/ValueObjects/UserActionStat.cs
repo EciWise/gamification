@@ -9,6 +9,8 @@ namespace Gamification.Domain.ValueObjects
         public int Count { get; }
         public DateTime LastUpdated { get; }
 
+        private UserActionStat() { }
+
         public UserActionStat(ActionType actionType, int count, DateTime lastUpdated)
         {
             if (count < 0) throw new ArgumentException("Count cannot be negative.", nameof(count));

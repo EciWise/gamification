@@ -16,7 +16,7 @@ namespace Gamification.Infrastructure.Persistence.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<UserGamification> GetByUserIdAsync(UserId userId)
+        public async Task<UserGamification?> GetByUserIdAsync(UserId userId)
         {
             return await _context.UserGamifications
                 .Include(u => u.CurrentLevel)

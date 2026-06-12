@@ -1,39 +1,53 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using Gamification.Application.Queries;
 using Gamification.Application.Commands;
+using Gamification.Domain.Enums;
 
 namespace Gamification.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Produces("application/json")]
     public class GamificationController : ControllerBase
     {
         private readonly IMediator _mediator;
 
         public GamificationController(IMediator mediator)
         {
-            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _mediator = mediator;
         }
 
-        // Example trigger (though points usually come from events, providing it here for testing).
-        [HttpPost("points/assign")]
-        public async Task<IActionResult> AssignPoints([FromBody] AssignPointsCommand command)
+        /// <summary>
+        /// Retrieves the ranking position for a specific user.
+        /// </summary>
+        /// <param name="userId">The unique identifier of the user.</param>
+        /// <param name="type">The type of ranking (e.g., GlobalPorPuntos).</param>
+        /// <returns>The user's ranking details.</returns>
+        [HttpGet("users/{userId}/ranking")]
+        [ProducesResponseType(typeof(UserRankingDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetUserRanking(Guid userId, [FromQuery] RankingType type = RankingType.GlobalPorPuntos)
         {
-            if (command.SourceEventId == Guid.Empty)
-            {
-                command.SourceEventId = Guid.NewGuid();
-            }
+            var query = new GetUserRankingQuery { UserId = userId, Type = type };
+            var result = await _mediator.Send(query);
 
-            var result = await _mediator.Send(command);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
 
-            if (result)
-            {
-                return Ok(new { message = "Points assigned successfully." });
-            }
-
-            return BadRequest(new { message = "Failed to assign points." });
+        /// <summary>
+        /// Retrieves all achievements unlocked by a specific user.
+        /// </summary>
+        /// <param name="userId">The unique identifier of the user.</param>
+        /// <returns>A list of unlocked achievements.</returns>
+        [HttpGet("users/{userId}/achievements")]
+        [ProducesResponseType(typeof(List<AchievementDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserAchievements(Guid userId)
+        {
+            var query = new GetUserAchievementsQuery { UserId = userId };
+            var result = await _mediator.Send(query);
+            return Ok(result);
         }
     }
 }

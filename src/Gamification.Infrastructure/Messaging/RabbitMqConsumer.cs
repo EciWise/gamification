@@ -9,8 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Gamification.Application.Commands;
 using Gamification.Domain.Enums;
+using Gamification.Infrastructure.Persistence;
 
 namespace Gamification.Infrastructure.Messaging
 {
@@ -54,9 +56,16 @@ namespace Gamification.Infrastructure.Messaging
                     var eventType = eventPayload.GetProperty("eventType").GetString();
 
                     using var scope = _serviceProvider.CreateScope();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
                     
-                    // Implement Idempotency Check with ProcessedEvents table here before handling!
+                    var eventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString());
+                    if (await dbContext.ProcessedEvents.AnyAsync(e => e.EventId == eventId))
+                    {
+                        _logger.LogWarning("Event {EventId} already processed. Skipping.", eventId);
+                        await _channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
+                        return;
+                    }
 
                     if (eventType == "LessonCompleted")
                     {
@@ -71,6 +80,14 @@ namespace Gamification.Infrastructure.Messaging
 
                         await mediator.Send(command, stoppingToken);
                     }
+
+                    dbContext.ProcessedEvents.Add(new Persistence.ProcessedEvent
+                    {
+                        EventId = eventId,
+                        EventType = eventType,
+                        ProcessedAt = DateTime.UtcNow
+                    });
+                    await dbContext.SaveChangesAsync(stoppingToken);
                     
                     await _channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
                 }
@@ -87,8 +104,8 @@ namespace Gamification.Infrastructure.Messaging
 
         public override void Dispose()
         {
-            _channel?.CloseAsync().AsTask().GetAwaiter().GetResult();
-            _connection?.CloseAsync().AsTask().GetAwaiter().GetResult();
+            _channel?.Dispose();
+            _connection?.Dispose();
             base.Dispose();
         }
     }
