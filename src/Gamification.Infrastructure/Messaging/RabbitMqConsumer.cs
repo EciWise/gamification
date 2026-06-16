@@ -124,18 +124,32 @@ namespace Gamification.Infrastructure.Messaging
                         return;
                     }
 
-                    if (eventType == "LessonCompleted")
+                    // Route event to appropriate command handler
+                    switch (eventType)
                     {
-                        var command = new AssignPointsCommand
-                        {
-                            UserId = Guid.Parse(eventPayload.GetProperty("userId").GetString()),
-                            Points = 10,
-                            ActionType = ActionType.TutoriaCompletada,
-                            SourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()),
-                            Description = "Puntos por completar lección"
-                        };
+                        case "LessonCompleted":
+                            await HandleLessonCompletedAsync(eventPayload, mediator, stoppingToken);
+                            break;
 
-                        await mediator.Send(command, stoppingToken);
+                        case "TutorshipDictated":
+                            await HandleTutorshipDictatedAsync(eventPayload, mediator, stoppingToken);
+                            break;
+
+                        case "QuizPassed":
+                            await HandleQuizPassedAsync(eventPayload, mediator, stoppingToken);
+                            break;
+
+                        case "TutorshipRated":
+                            await HandleTutorshipRatedAsync(eventPayload, mediator, stoppingToken);
+                            break;
+
+                        case "ForumPostCreated":
+                            await HandleForumPostCreatedAsync(eventPayload, mediator, stoppingToken);
+                            break;
+
+                        default:
+                            _logger.LogWarning("Unknown event type: {EventType}. Skipping.", eventType);
+                            break;
                     }
 
                     dbContext.ProcessedEvents.Add(new Persistence.ProcessedEvent
@@ -156,6 +170,118 @@ namespace Gamification.Infrastructure.Messaging
             };
 
             await channel.BasicConsumeAsync(queue: "gamification_events_queue", autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
+        }
+
+        private async Task HandleLessonCompletedAsync(JsonElement eventPayload, IMediator mediator, CancellationToken cancellationToken)
+        {
+            // Event structure from Study Service:
+            // { eventId, userId, eventType: "LessonCompleted", lessonId, subject, score, completedAt }
+
+            var userId = Guid.Parse(eventPayload.GetProperty("userId").GetString()!);
+            var lessonId = eventPayload.TryGetProperty("lessonId", out var lesson) ? lesson.GetString() : "unknown";
+            var score = eventPayload.TryGetProperty("score", out var s) ? s.GetDouble() : 0;
+
+            var description = $"Lección completada: {lessonId} (Calificación: {score:F1})";
+
+            var command = new AssignPointsCommand
+            {
+                UserId = userId,
+                Points = 10,
+                ActionType = ActionType.TutoriaCompletada,
+                SourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()!),
+                Description = description
+            };
+            await mediator.Send(command, cancellationToken);
+        }
+
+        private async Task HandleTutorshipDictatedAsync(JsonElement eventPayload, IMediator mediator, CancellationToken cancellationToken)
+        {
+            // Event structure from Tutoring Service:
+            // { eventId, userId (tutorId), eventType: "TutorshipDictated", studentId, duration, subject, startedAt }
+
+            var tutorId = Guid.Parse(eventPayload.GetProperty("userId").GetString()!);
+            var studentId = eventPayload.TryGetProperty("studentId", out var student) ? student.GetString() : "unknown";
+            var duration = eventPayload.TryGetProperty("duration", out var dur) ? dur.GetInt32() : 0;
+
+            var description = $"Tutoría dictada a {studentId} ({duration} minutos)";
+
+            var command = new AssignPointsCommand
+            {
+                UserId = tutorId,
+                Points = 15,
+                ActionType = ActionType.TutoriaDictada,
+                SourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()!),
+                Description = description
+            };
+            await mediator.Send(command, cancellationToken);
+        }
+
+        private async Task HandleQuizPassedAsync(JsonElement eventPayload, IMediator mediator, CancellationToken cancellationToken)
+        {
+            // Event structure from Assessment Service:
+            // { eventId, userId, eventType: "QuizPassed", quizId, score, passingScore, subject, completedAt }
+
+            var userId = Guid.Parse(eventPayload.GetProperty("userId").GetString()!);
+            var quizId = eventPayload.TryGetProperty("quizId", out var quiz) ? quiz.GetString() : "unknown";
+            var score = eventPayload.TryGetProperty("score", out var s) ? s.GetDouble() : 0;
+
+            var description = $"Quiz aprobado: {quizId} (Puntuación: {score:F1})";
+
+            var command = new AssignPointsCommand
+            {
+                UserId = userId,
+                Points = 20,
+                ActionType = ActionType.MaterialAprobado,
+                SourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()!),
+                Description = description
+            };
+            await mediator.Send(command, cancellationToken);
+        }
+
+        private async Task HandleTutorshipRatedAsync(JsonElement eventPayload, IMediator mediator, CancellationToken cancellationToken)
+        {
+            // Event structure from Tutoring Service:
+            // { eventId, userId (tutorId), eventType: "TutorshipRated", studentId, rating (1-5), comment, ratedAt }
+
+            var tutorId = Guid.Parse(eventPayload.GetProperty("userId").GetString()!);
+            var ratingValue = eventPayload.TryGetProperty("rating", out var rating) ? rating.GetInt32() : 3;
+            var studentId = eventPayload.TryGetProperty("studentId", out var student) ? student.GetString() : "unknown";
+            var points = ratingValue >= 4 ? 25 : 10;
+
+            var description = $"Tutoría calificada por {studentId}: {ratingValue}⭐";
+
+            var command = new AssignPointsCommand
+            {
+                UserId = tutorId,
+                Points = points,
+                ActionType = ActionType.TutoriaCalificada,
+                SourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()!),
+                Description = description
+            };
+            await mediator.Send(command, cancellationToken);
+        }
+
+        private async Task HandleForumPostCreatedAsync(JsonElement eventPayload, IMediator mediator, CancellationToken cancellationToken)
+        {
+            // Event structure from Forum Service:
+            // { eventId, userId, eventType: "ForumPostCreated", postId, title, categoryId, createdAt, isReply }
+
+            var userId = Guid.Parse(eventPayload.GetProperty("userId").GetString()!);
+            var postId = eventPayload.TryGetProperty("postId", out var post) ? post.GetString() : "unknown";
+            var title = eventPayload.TryGetProperty("title", out var t) ? t.GetString() : "Sin título";
+            var isReply = eventPayload.TryGetProperty("isReply", out var reply) ? reply.GetBoolean() : false;
+
+            var description = isReply ? $"Respuesta en foro: {title}" : $"Post en foro: {title}";
+
+            var command = new AssignPointsCommand
+            {
+                UserId = userId,
+                Points = 5,
+                ActionType = ActionType.ForoPublicado,
+                SourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()!),
+                Description = description
+            };
+            await mediator.Send(command, cancellationToken);
         }
 
         /// <summary>
