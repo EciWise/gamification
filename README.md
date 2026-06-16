@@ -1,57 +1,225 @@
-# Gamification Microservice
+# 🎮 Gamification Microservice
 
-Este es un microservicio encargado de gestionar toda la lógica de **Gamificación** (ej. asignación de puntos, niveles, logros, misiones) basado en las acciones del usuario. 
+[![Build Status](https://github.com/EciWise/gamification/workflows/CI/badge.svg)](https://github.com/EciWise/gamification/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10-blueviolet)](https://dotnet.microsoft.com)
+[![Security Policy](https://img.shields.io/badge/Security-Policy-red)](SECURITY.md)
 
-La aplicación recibe eventos de un frontend desacoplado mediante una cola de mensajes en **RabbitMQ**, procesa las reglas de negocio correspondientes, y persiste los datos.
+Microservicio robusto y seguro para gestionar gamificación (puntos, logros, rankings) en **EciWise 2**. Implementado con **Arquitectura Hexagonal**, **Domain-Driven Design** y **CQRS**.
+
+---
+
+## ✨ Características
+
+- 🎯 **Gestión de Puntos**: Otorga puntos según acciones del usuario (tutorías, materiales, foros)
+- 🏆 **Sistema de Logros**: Desbloquea badges con estrategias configurables
+- 📊 **Rankings Dinámicos**: Leaderboards globales, por materia y mensuales con caché en Redis
+- 🔐 **Autenticación JWT**: Validación segura de mensajes vía RabbitMQ
+- 📨 **Manejado por Eventos**: Procesamiento asincrónico con Patrón Outbox
+- 🛡️ **Idempotente**: Garantía de procesamiento exacto una sola vez
+- 📈 **Observable**: Logging estructurado con Microsoft.Extensions.Logging
+- 🧪 **Testeable**: Capa Domain sin dependencias externas
+
+---
 
 ## 🏗️ Arquitectura
 
-El proyecto está diseñado usando **Arquitectura Limpia / Hexagonal (Ports & Adapters)** para mantener el diseño flexible y las reglas de negocio aisladas de cualquier dependencia externa o framework.
-
-### Estructura de Proyectos
-
-* **`src/Gamification.Domain`:** Entidades base de gamificación (Usuario, Recompensas, Niveles) y reglas puras del negocio. (Sin dependencias externas).
-* **`src/Gamification.Application`:** Orquestación (Casos de Uso) y definición de interfaces (Puertos).
-* **`src/Gamification.Infrastructure`:** (Adaptador) Implementaciones de persistencia de datos (ej. Base de Datos / Entity Framework).
-* **`src/Gamification.Messaging`:** (Adaptador) Consumo y publicación de eventos hacia RabbitMQ para integración asíncrona.
-* **`src/Gamification.Api`:** (Punto de entrada) Host HTTP principal, inyección de dependencias (DI) y controladores/puntos finales para interactuar con otras aplicaciones.
-
-## 🚀 Requisitos Previos
-
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) instalado.
-- Una instancia de **RabbitMQ** en ejecución (se recomienda vía Docker).
-- Opcional: Entorno local para base de datos (según se implemente en Infrastructure).
-
-## ⚙️ Configuración y Ejecución
-
-1. **Variables de Entorno:** 
-   Crea un archivo `.env` en la raíz de la solución y ajusta tus credenciales de RabbitMQ (y cualquier otra de DB que añadas próximamente):
-   ```env
-   RABBITMQ_HOST=localhost
-   RABBITMQ_USER=guest
-   RABBITMQ_PASS=guest
-   ```
-
-2. **Restaurar las dependencias e instalar:**
-   ```bash
-   dotnet restore
-   dotnet build
-   ```
-
-3. **Ejecutar el proyecto principal:**
-   ```bash
-   dotnet run --project src/Gamification.Api/Gamification.Api.csproj
-   ```
-
-## 🧪 Pruebas (Tests)
-
-El marco de trabajo incluye proyectos separados para pruebas funcionales (`xUnit`).
-
-```bash
-dotnet test
+```
+┌─────────────────────────────────────────────┐
+│        Gamification.Api (HTTP)              │
+│    Controllers • DI • Swagger • Logging     │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────┴──────────────────────────┐
+│     Gamification.Application (CQRS)         │
+│   Commands • Queries • Handlers • MediatR   │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────┴──────────────────────────┐
+│       Gamification.Domain (DDD)             │
+│  Aggregates • Entities • Value Objects      │
+│  Domain Services • Ports • Domain Events    │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────┴──────────────────────────┐
+│    Gamification.Infrastructure (Adapters)   │
+│  Repositories • Cache • Messaging • Workers │
+└─────────────────────────────────────────────┘
 ```
 
+**Patrón**: Hexagonal (Ports & Adapters)
+**Principios**: DDD, CQRS, Event-Driven, Clean Architecture
+
+---
+
+## 🚀 Inicio Rápido
+
+### Requisitos Previos
+
+- **.NET 10** SDK
+- **Docker** & **Docker Compose**
+- **PostgreSQL 15** (o vía Docker)
+- **RabbitMQ 3.12** (o vía Docker)
+- **Redis 7** (o vía Docker)
+
+### Usando Docker Compose (Recomendado)
+
+```bash
+# Inicia los servicios de infraestructura
+docker-compose up -d
+
+# El servicio se conectará a:
+# - PostgreSQL: localhost:5432 (gamification_user / Segura123!)
+# - Redis: localhost:6379
+# - RabbitMQ: localhost:5672 (guest / guest)
+#   Management UI: http://localhost:15672
+```
+
+### Desarrollo Local
+
+```bash
+# Clonar repositorio
+git clone https://github.com/EciWise/gamification.git
+cd gamification
+
+# Restaurar dependencias
+dotnet restore
+
+# Compilar
+dotnet build
+
+# Ejecutar tests
+dotnet test
+
+# Iniciar API
+dotnet run --project src/Gamification.Api
+
+# API disponible en: http://localhost:5027
+# Swagger UI: http://localhost:5027/swagger/index.html
+```
+
+---
+
+## 📚 Documentación API
+
+### Endpoints Principales
+
+#### Obtener Ranking del Usuario
+```http
+GET /api/gamification/users/{userId}/ranking?type=GlobalPorPuntos
+
+Response: 200 OK
+{
+  "userId": "uuid",
+  "position": 1,
+  "score": 5200.5
+}
+```
+
+#### Obtener Logros del Usuario
+```http
+GET /api/gamification/users/{userId}/achievements
+
+Response: 200 OK
+[
+  {
+    "id": "uuid",
+    "name": "Primera Tutoría",
+    "description": "Dicta tu primera tutoría",
+    "imageUrl": "https://...",
+    "unlockedAt": "2026-06-16T10:30:00Z"
+  }
+]
+```
+
+Documentación completa disponible en `/swagger/index.html`
+
+---
+
+## 🔐 Seguridad
+
+### Autenticación JWT
+
+Todos los mensajes RabbitMQ deben incluir un JWT válido en el encabezado `x-jwt-token`:
+
+```bash
+JWT_SECRET_KEY=your-super-secret-key-min-32-characters-long!!!
+JWT_ISSUER=gamification-service
+JWT_AUDIENCE=gamification-api
+```
+
+Los mensajes sin JWT válido son rechazados con `Nack(requeue=false)`.
+
+**Ver [SECURITY.md](SECURITY.md) para políticas de seguridad detalladas.**
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+gamification/
+├── src/
+│   ├── Gamification.Api/              # Punto de entrada HTTP
+│   ├── Gamification.Application/      # Casos de uso (CQRS)
+│   ├── Gamification.Domain/           # Lógica de negocio pura
+│   ├── Gamification.Infrastructure/   # Adaptadores
+│   └── Gamification.Messaging/        # Contratos de eventos
+├── tests/
+│   ├── Gamification.Domain.Tests/
+│   ├── Gamification.Application.Tests/
+│   └── Gamification.Integration.Tests/
+├── docker-compose.yml
+├── .env.example
+└── Gamification.slnx
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Ejecutar todos los tests
+dotnet test
+
+# Ejecutar proyecto específico
+dotnet test tests/Gamification.Domain.Tests
+
+# Con cobertura
+dotnet test /p:CollectCoverage=true /p:CoverageFormat=opencover
+```
+
+---
+
+## 🤝 Contribución
+
+¡Bienvenidas las contribuciones! Ver [CONTRIBUTING.md](CONTRIBUTING.md) para:
+- Código de Conducta
+- Configuración de desarrollo
+- Convenciones de commits
+- Proceso de Pull Requests
+
+---
+
+## 📝 Licencia
+
+Este proyecto está bajo licencia **MIT** - ver archivo [LICENSE](LICENSE)
+
+---
+
+## 🛡️ Reporte de Vulnerabilidades
+
+Si encuentras una vulnerabilidad, **no** crees un issue público.
+Sigue nuestra [Política de Seguridad](SECURITY.md) para divulgación responsable.
+
+---
+
 ## 🛠️ Tecnologías
-- **Platform:** C# / .NET 10
-- **Message Broker:** RabbitMQ
-- **Test Framework:** xUnit / Moq
+
+- **Plataforma**: C# / .NET 10
+- **Base de Datos**: PostgreSQL 15
+- **Cache**: Redis 7
+- **Message Broker**: RabbitMQ 3.12
+- **ORM**: Entity Framework Core
+- **CQRS**: MediatR
+- **Testing**: xUnit, Moq, FluentAssertions
+- **API Docs**: Swagger/Swashbuckle
