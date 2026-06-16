@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Gamification.Application.Commands;
 using Gamification.Domain.Enums;
 using Gamification.Infrastructure.Persistence;
+using Gamification.Infrastructure.Security;
 
 namespace Gamification.Infrastructure.Messaging
 {
@@ -20,13 +21,15 @@ namespace Gamification.Infrastructure.Messaging
     {
         private readonly ILogger<RabbitMqConsumer> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IJwtValidator _jwtValidator;
         private IConnection? _connection;
         private IChannel? _channel;
 
-        public RabbitMqConsumer(ILogger<RabbitMqConsumer> logger, IServiceProvider serviceProvider)
+        public RabbitMqConsumer(ILogger<RabbitMqConsumer> logger, IServiceProvider serviceProvider, IJwtValidator jwtValidator)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
+            _jwtValidator = jwtValidator;
         }
 
         private async Task InitializeRabbitMqListenerAsync(CancellationToken stoppingToken)
@@ -85,11 +88,27 @@ namespace Gamification.Infrastructure.Messaging
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                
+
                 _logger.LogInformation("Received external event: {Message}", message);
 
                 try
                 {
+                    // Validar JWT desde los headers del mensaje
+                    var jwtToken = ExtractJwtFromHeaders(ea.BasicProperties);
+                    if (string.IsNullOrWhiteSpace(jwtToken))
+                    {
+                        _logger.LogWarning("Rejecting message: JWT token not found in message headers.");
+                        await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                        return;
+                    }
+
+                    if (!_jwtValidator.ValidateToken(jwtToken, out _))
+                    {
+                        _logger.LogWarning("Rejecting message: JWT token validation failed.");
+                        await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                        return;
+                    }
+
                     var eventPayload = JsonDocument.Parse(message).RootElement;
                     var eventType = eventPayload.GetProperty("eventType").GetString();
 
@@ -137,6 +156,21 @@ namespace Gamification.Infrastructure.Messaging
             };
 
             await channel.BasicConsumeAsync(queue: "gamification_events_queue", autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
+        }
+
+        /// <summary>
+        /// Extrae el JWT del header "x-jwt-token" del mensaje de RabbitMQ.
+        /// </summary>
+        private static string? ExtractJwtFromHeaders(IReadOnlyBasicProperties? basicProperties)
+        {
+            if (basicProperties?.Headers == null || !basicProperties.Headers.ContainsKey("x-jwt-token"))
+                return null;
+
+            var headerValue = basicProperties.Headers["x-jwt-token"];
+            if (headerValue is byte[] jwtBytes)
+                return Encoding.UTF8.GetString(jwtBytes);
+
+            return headerValue?.ToString();
         }
 
         public override void Dispose()
