@@ -1,0 +1,20 @@
+# Configuración de plantillas de issues en GitHub
+
+blank_issues_enabled: true  # Permite crear issues sin plantilla
+
+contact_links:
+  - name: 📖 Documentación
+    url: https://github.com/EciWise/gamification#readme
+    about: Lee la documentación principal del proyecto
+
+  - name: 💬 Discussions
+    url: https://github.com/EciWise/gamification/discussions
+    about: Para preguntas, ideas o discusiones generales
+
+  - name: 🔒 Reporte de Seguridad
+    url: https://github.com/EciWise/gamification/security/policy
+    about: Para reportar vulnerabilidades de seguridad responsablemente
+
+  - name: 📧 Contacto General
+    url: mailto:support@eciwise.edu
+    about: Envía un correo para otros asuntos

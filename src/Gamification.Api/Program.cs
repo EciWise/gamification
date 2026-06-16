@@ -5,6 +5,7 @@ using Gamification.Domain.Repositories;
 using Gamification.Domain.Services;
 using Gamification.Infrastructure.Messaging;
 using Gamification.Infrastructure.Cache;
+using Gamification.Infrastructure.Security;
 using StackExchange.Redis;
 using System.Reflection;
 using Microsoft.OpenApi.Models;
@@ -92,6 +93,21 @@ public class Program
         builder.Services.AddScoped<IAchievementDefinitionRepository, AchievementDefinitionRepository>();
         builder.Services.AddScoped<IGamificationRuleRepository, GamificationRuleRepository>();
         builder.Services.AddScoped<IRankingRepository, RankingRepository>();
+
+        // JWT Validation (Security)
+        var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
+                        ?? builder.Configuration.GetValue<string>("Jwt:SecretKey")
+                        ?? "your-super-secret-key-min-32-characters-long!!!";
+        var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
+                     ?? builder.Configuration.GetValue<string>("Jwt:Issuer");
+        var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+                       ?? builder.Configuration.GetValue<string>("Jwt:Audience");
+
+        builder.Services.AddSingleton<IJwtValidator>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<JwtValidator>>();
+            return new JwtValidator(jwtSecretKey, jwtIssuer, jwtAudience, logger);
+        });
 
         // Domain Services
         builder.Services.AddScoped<GamificationDomainService>();
