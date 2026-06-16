@@ -481,5 +481,17 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# Variables de Entorno
+# 🔒 Variables de Entorno y Secretos
 .env
+.env.local
+.env.*.local
+appsettings.*.json
+!appsettings.Development.json
+*.pem
+*.key
+*.pfx
+secrets.json
+
+# 📋 Configuración de IDE local
+.vscode/settings.json
+.idea/
