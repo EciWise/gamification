@@ -39,6 +39,28 @@ services:
     networks:
       - gamification-net
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/eciwise/gamification:latest
+    container_name: gamification-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=gamification_db;Username=gamification_user;Password=Segura123!"
+      ConnectionStrings__Redis: "redis:6379"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - gamification-net
+
 volumes:
   postgres_data:
   redis_data:
