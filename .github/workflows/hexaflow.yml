@@ -60,8 +60,8 @@ jobs:
             fi
           fi
 
-          CODE_EXTENSIONS="${_CODE_EXTENSIONS:-.ts .tsx .js .jsx .yml .yaml .prisma .mjs .cjs}"
-          CODE_PATHS="${_CODE_PATHS:-src prisma Dockerfile prisma.config.ts tsconfig.json tsconfig.build.json nest-cli.json}"
+          CODE_EXTENSIONS="${_CODE_EXTENSIONS:-.cs .csproj}"
+          CODE_PATHS="${_CODE_PATHS:-src}"
           CODE_MAX_FILES="${_CODE_MAX_FILES:-30}"
 
           echo "dockerfile=${DOCKERFILE}" >> "$GITHUB_OUTPUT"
