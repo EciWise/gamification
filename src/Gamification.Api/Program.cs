@@ -111,7 +111,9 @@ public class Program
         // Background Services
         builder.Services.AddHostedService<RabbitMqConsumer>();
         builder.Services.AddHostedService<OutboxWorker>();
-builder.Services.AddHostedService<RankingJob>();
+        builder.Services.AddHostedService<RankingJob>();
+
+        builder.Services.AddHealthChecks();
 
         var app = builder.Build();
 
@@ -136,6 +138,7 @@ builder.Services.AddHostedService<RankingJob>();
             }
         }
 
+        app.MapHealthChecks("/health");
         app.UseHttpsRedirection();
         app.UseAuthorization();
         app.MapControllers();

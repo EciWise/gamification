@@ -47,11 +47,15 @@ services:
     container_name: gamification-api
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-gamification_db};Username=${POSTGRES_USER:-gamification_user};Password=${POSTGRES_PASSWORD}"
-      ConnectionStrings__Redis: "redis:6379"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-gamification_db}
+      POSTGRES_USER: ${POSTGRES_USER:-gamification_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      Redis__ConnectionString: "redis:6379"
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Username: ${RABBITMQ_USER:-guest}
-      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
     ports:
       - "8080:8080"
     depends_on:
