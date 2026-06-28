@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: gamification-postgres
     environment:
-      POSTGRES_USER: gamification_user
-      POSTGRES_PASSWORD: Segura123!
-      POSTGRES_DB: gamification_db
+      POSTGRES_USER: ${POSTGRES_USER:-gamification_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-gamification_db}
     ports:
       - "5432:5432"
     volumes:
@@ -29,13 +29,39 @@ services:
     image: rabbitmq:3.12-management-alpine
     container_name: gamification-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
     ports:
       - "5672:5672"
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - gamification-net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/eciwise/gamification:latest
+    container_name: gamification-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-gamification_db}
+      POSTGRES_USER: ${POSTGRES_USER:-gamification_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      Redis__ConnectionString: "redis:6379"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: ${RABBITMQ_USER:-guest}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
     networks:
       - gamification-net
 
