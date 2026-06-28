@@ -9,14 +9,13 @@ RUN dotnet restore src/Gamification.Api/Gamification.Api.csproj && \
         --configuration Release \
         --output /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
-    rm -rf /var/lib/apt/lists/* && \
-    groupadd --system appgroup && \
-    useradd --system --gid appgroup --no-create-home appuser
+RUN apk upgrade --no-cache && \
+    apk add --no-cache wget && \
+    addgroup -S appgroup && \
+    adduser -S -G appgroup -H appuser
 
 COPY --from=build /app/publish .
 
@@ -28,6 +27,6 @@ EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "Gamification.Api.dll"]
