@@ -1,10 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /repo
 
-COPY Gamification.slnx ./
 COPY src/ src/
 
-RUN dotnet restore Gamification.slnx && \
+RUN dotnet restore src/Gamification.Api/Gamification.Api.csproj && \
     dotnet publish src/Gamification.Api/Gamification.Api.csproj \
         --no-restore \
         --configuration Release \
