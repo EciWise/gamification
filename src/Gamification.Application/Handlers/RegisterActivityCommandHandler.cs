@@ -7,11 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Gamification.Application.Handlers
 {
-    /// <summary>
-    /// Otorga puntos por una actividad recurrente y devuelve los logros que se
-    /// desbloqueen en el proceso. Delega en <see cref="AssignPointsCommand"/>,
-    /// que centraliza puntos, subida de nivel y evaluación de logros.
-    /// </summary>
+    /// <summary>Otorga puntos por una actividad recurrente, delegando en <see cref="AssignPointsCommand"/>.</summary>
     public class RegisterActivityCommandHandler : IRequestHandler<RegisterActivityCommand, ActionRewardResult>
     {
         private readonly IMediator _mediator;

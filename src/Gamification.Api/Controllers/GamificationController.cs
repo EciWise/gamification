@@ -123,14 +123,7 @@ namespace Gamification.Api.Controllers
             return Ok(new { rewarded = result.Rewarded, unlockedAchievements = result.UnlockedAchievements });
         }
 
-        /// <summary>
-        /// Registers that a user completed their AI profile in the profile section.
-        /// The first completion grants 10 points and unlocks the "La IA ya sabe
-        /// dónde vives" achievement; subsequent calls are idempotent (no extra
-        /// points).
-        /// </summary>
-        /// <param name="userId">The unique identifier of the user.</param>
-        /// <returns>200 with rewarded=true on the first completion; rewarded=false otherwise.</returns>
+        /// <summary>Registers that a user completed their AI profile (one-time reward).</summary>
         [HttpPost("users/{userId}/ai-profile/completed")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> RegisterAiProfileCompleted(Guid userId)
@@ -142,13 +135,7 @@ namespace Gamification.Api.Controllers
             return Ok(new { rewarded = result.Rewarded, unlockedAchievements = result.UnlockedAchievements });
         }
 
-        /// <summary>
-        /// Registers that a user opened a question in the Help Center. The first
-        /// opened question unlocks the "Perdidasss, andamos perdidasss!" achievement
-        /// without granting points; subsequent calls are idempotent.
-        /// </summary>
-        /// <param name="userId">The unique identifier of the user.</param>
-        /// <returns>200 with rewarded=true on the first opened question; rewarded=false otherwise.</returns>
+        /// <summary>Registers that a user opened a Help Center question (one-time achievement).</summary>
         [HttpPost("users/{userId}/help/opened")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> RegisterHelpQuestionOpened(Guid userId)

@@ -188,10 +188,7 @@ namespace Gamification.Domain.Services
         }
     }
 
-    /// <summary>
-    /// "La IA ya sabe dónde vives": se desbloquea al completar el perfil de IA en
-    /// la sección de perfil (al menos un PerfilIACompletado).
-    /// </summary>
+    /// <summary>"La IA ya sabe dónde vives": completar el perfil de IA.</summary>
     public class AiProfileCompletedStrategy : IAchievementStrategy
     {
         public string StrategyKey => "AI_PROFILE_COMPLETED";
@@ -202,10 +199,7 @@ namespace Gamification.Domain.Services
         }
     }
 
-    /// <summary>
-    /// "Perdidasss, andamos perdidasss!": se desbloquea al abrir por primera vez
-    /// cualquier pregunta del Centro de Ayuda (al menos un AyudaPreguntaAbierta).
-    /// </summary>
+    /// <summary>"Perdidasss, andamos perdidasss!": abrir una pregunta del Centro de Ayuda.</summary>
     public class HelpQuestionOpenedStrategy : IAchievementStrategy
     {
         public string StrategyKey => "HELP_QUESTION_OPENED";
