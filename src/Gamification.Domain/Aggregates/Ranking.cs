@@ -15,7 +15,11 @@ namespace Gamification.Domain.Aggregates
         private readonly List<RankingEntry> _entries = new();
         public IReadOnlyCollection<RankingEntry> Entries => _entries.AsReadOnly();
 
-        private Ranking() { }
+        // Constructor de materialización para EF Core.
+        private Ranking()
+        {
+            Period = null!;
+        }
 
         public Ranking(Guid id, RankingType type, DateRange period, SubjectCode? subjectCode = null)
         {
@@ -49,7 +53,11 @@ namespace Gamification.Domain.Aggregates
         public decimal Score { get; private set; }
         public DateTime ComputedAt { get; private set; }
 
-        private RankingEntry() { }
+        // Constructor de materialización para EF Core.
+        private RankingEntry()
+        {
+            UserId = null!;
+        }
 
         public RankingEntry(Guid id, UserId userId, int position, decimal score, DateTime computedAt)
         {

@@ -14,7 +14,14 @@ namespace Gamification.Domain.Entities
         public IdempotencyKey IdempotencyKey { get; private set; }
         public DateTime OccurredAt { get; private set; }
 
-        private PointTransaction() { } // EF Core
+        // Constructor de materialización para EF Core.
+        private PointTransaction()
+        {
+            UserId = null!;
+            Points = null!;
+            Description = null!;
+            IdempotencyKey = null!;
+        }
 
         public PointTransaction(
             Guid id,

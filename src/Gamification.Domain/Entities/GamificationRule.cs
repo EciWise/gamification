@@ -10,7 +10,11 @@ namespace Gamification.Domain.Entities
         public Points PointsAwarded { get; private set; }
         public bool IsActive { get; private set; }
 
-        private GamificationRule() { }
+        // Constructor de materialización para EF Core.
+        private GamificationRule()
+        {
+            PointsAwarded = null!;
+        }
 
         public GamificationRule(Guid id, ActionType actionType, Points pointsAwarded, bool isActive = true)
         {

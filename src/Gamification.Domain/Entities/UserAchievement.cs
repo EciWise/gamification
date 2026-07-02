@@ -9,7 +9,12 @@ namespace Gamification.Domain.Entities
         public AchievementDefinition Achievement { get; private set; }
         public DateTime UnlockedAt { get; private set; }
 
-        private UserAchievement() { }
+        // Constructor de materialización para EF Core.
+        private UserAchievement()
+        {
+            UserId = null!;
+            Achievement = null!;
+        }
 
         public UserAchievement(Guid id, ValueObjects.UserId userId, AchievementDefinition achievement, DateTime unlockedAt)
             : base(id)

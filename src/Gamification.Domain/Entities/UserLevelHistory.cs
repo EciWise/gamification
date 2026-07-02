@@ -10,7 +10,13 @@ namespace Gamification.Domain.Entities
         public Points PointsAtThatMoment { get; private set; }
         public DateTime AchievedAt { get; private set; }
 
-        private UserLevelHistory() { }
+        // Constructor de materialización para EF Core.
+        private UserLevelHistory()
+        {
+            UserId = null!;
+            Level = null!;
+            PointsAtThatMoment = null!;
+        }
 
         public UserLevelHistory(Guid id, UserId userId, LevelDefinition level, Points points, DateTime achievedAt)
         {

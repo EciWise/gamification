@@ -11,7 +11,12 @@ namespace Gamification.Domain.Entities
         public int ActionsCount { get; private set; }
         public DateTime RecordedAt { get; private set; }
 
-        private WeeklyActivity() { }
+        // Constructor de materialización para EF Core.
+        private WeeklyActivity()
+        {
+            UserId = null!;
+            PointsEarned = null!;
+        }
 
         public WeeklyActivity(Guid id, UserId userId, DateTime weekStart, Points pointsEarned, int actionsCount, DateTime recordedAt)
         {

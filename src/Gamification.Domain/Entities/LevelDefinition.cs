@@ -8,7 +8,12 @@ namespace Gamification.Domain.Entities
         public string Name { get; private set; }
         public Points MinPoints { get; private set; }
 
-        private LevelDefinition() { }
+        // Constructor de materialización para EF Core.
+        private LevelDefinition()
+        {
+            Name = null!;
+            MinPoints = null!;
+        }
 
         public LevelDefinition(Guid id, string name, Points minPoints) : base(id)
         {

@@ -12,7 +12,15 @@ namespace Gamification.Domain.Aggregates
         public CriteriaConfig CriteriaConfig { get; private set; }
         public bool IsActive { get; private set; }
 
-        private AchievementDefinition() { }
+        // Constructor de materialización para EF Core.
+        private AchievementDefinition()
+        {
+            Name = null!;
+            Description = null!;
+            ImageUrl = null!;
+            StrategyKey = null!;
+            CriteriaConfig = null!;
+        }
 
         public AchievementDefinition(Guid id, string name, string description, string imageUrl, string strategyKey, CriteriaConfig criteriaConfig, bool isActive)
         {
