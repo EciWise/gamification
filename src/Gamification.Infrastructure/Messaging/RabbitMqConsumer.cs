@@ -336,9 +336,7 @@ namespace Gamification.Infrastructure.Messaging
         }
 
         /// <summary>
-        /// Asigna puntos por un evento de dominio interno. Si existe una
-        /// `GamificationRule` activa para el ActionType usa sus puntos; si no, usa
-        /// el valor por defecto recibido.
+        /// Asigna puntos por un evento de dominio interno usando el valor por defecto recibido.
         /// </summary>
         private async Task HandleDomainPointsAsync(
             JsonElement eventPayload,
