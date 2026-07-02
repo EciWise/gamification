@@ -14,6 +14,8 @@ namespace Gamification.Api;
 
 public class Program
 {
+    protected Program() { }
+
     public static void Main(string[] args)
     {
         // Load .env file if it exists, traversing upwards to find it
@@ -30,7 +32,7 @@ public class Program
             foreach (var line in File.ReadAllLines(dotenvPath))
             {
                 var parts = line.Split('=', 2, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 2 && !line.TrimStart().StartsWith("#"))
+                if (parts.Length == 2 && !line.TrimStart().StartsWith('#'))
                 {
                     Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
                 }
@@ -291,6 +293,6 @@ public class AchievementStrategyFactory : IAchievementStrategyFactory
     public IAchievementStrategy GetStrategy(string strategyKey)
     {
         return _strategies.FirstOrDefault(s => s.StrategyKey == strategyKey)
-               ?? throw new Exception($"Strategy {strategyKey} not found");
+               ?? throw new InvalidOperationException($"Strategy {strategyKey} not found");
     }
 }

@@ -3,24 +3,16 @@ using Gamification.Domain.ValueObjects;
 
 namespace Gamification.Domain.Aggregates
 {
-    public class AchievementDefinition : AggregateRoot<Guid>
+    public class AchievementDefinition : AggregateRoot
     {
-        public string Name { get; private set; }
-        public string Description { get; private set; }
-        public string ImageUrl { get; private set; }
-        public string StrategyKey { get; private set; }
-        public CriteriaConfig CriteriaConfig { get; private set; }
+        public string Name { get; private set; } = null!;
+        public string Description { get; private set; } = null!;
+        public string ImageUrl { get; private set; } = null!;
+        public string StrategyKey { get; private set; } = null!;
+        public CriteriaConfig CriteriaConfig { get; private set; } = null!;
         public bool IsActive { get; private set; }
 
-        // Constructor de materialización para EF Core.
-        private AchievementDefinition()
-        {
-            Name = null!;
-            Description = null!;
-            ImageUrl = null!;
-            StrategyKey = null!;
-            CriteriaConfig = null!;
-        }
+        private AchievementDefinition() { }
 
         public AchievementDefinition(Guid id, string name, string description, string imageUrl, string strategyKey, CriteriaConfig criteriaConfig, bool isActive)
         {

@@ -7,19 +7,15 @@ using Gamification.Domain.ValueObjects;
 
 namespace Gamification.Domain.Aggregates
 {
-    public class Ranking : AggregateRoot<Guid>
+    public class Ranking : AggregateRoot
     {
         public RankingType Type { get; private set; }
         public SubjectCode? SubjectCode { get; private set; }
-        public DateRange Period { get; private set; }
+        public DateRange Period { get; private set; } = null!;
         private readonly List<RankingEntry> _entries = new();
         public IReadOnlyCollection<RankingEntry> Entries => _entries.AsReadOnly();
 
-        // Constructor de materialización para EF Core.
-        private Ranking()
-        {
-            Period = null!;
-        }
+        private Ranking() { }
 
         public Ranking(Guid id, RankingType type, DateRange period, SubjectCode? subjectCode = null)
         {
@@ -48,16 +44,12 @@ namespace Gamification.Domain.Aggregates
 
     public class RankingEntry : Entity
     {
-        public UserId UserId { get; private set; }
+        public UserId UserId { get; private set; } = null!;
         public int Position { get; private set; }
         public decimal Score { get; private set; }
         public DateTime ComputedAt { get; private set; }
 
-        // Constructor de materialización para EF Core.
-        private RankingEntry()
-        {
-            UserId = null!;
-        }
+        private RankingEntry() { }
 
         public RankingEntry(Guid id, UserId userId, int position, decimal score, DateTime computedAt)
         {

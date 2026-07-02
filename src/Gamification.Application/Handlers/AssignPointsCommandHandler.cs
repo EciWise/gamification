@@ -135,8 +135,7 @@ namespace Gamification.Application.Handlers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error assigning points to user {UserId}", request.UserId);
-                throw;
+                throw new InvalidOperationException($"Error assigning points to user {request.UserId}.", ex);
             }
         }
     }

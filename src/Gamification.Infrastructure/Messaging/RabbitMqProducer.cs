@@ -17,7 +17,7 @@ namespace Gamification.Infrastructure.Messaging
         Task<IConnection> GetConnectionAsync(CancellationToken cancellationToken = default);
     }
 
-    public class RabbitMqConnectionProvider : IRabbitMqConnectionProvider, IDisposable
+    public sealed class RabbitMqConnectionProvider : IRabbitMqConnectionProvider, IDisposable
     {
         private readonly SemaphoreSlim _gate = new(1, 1);
         private IConnection? _connection;

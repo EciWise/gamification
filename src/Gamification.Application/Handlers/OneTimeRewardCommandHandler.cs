@@ -30,9 +30,9 @@ namespace Gamification.Application.Handlers
         protected abstract int Points { get; }
         protected abstract string GetDescription(TCommand command);
 
-        public async Task<ActionRewardResult> Handle(TCommand command, CancellationToken cancellationToken)
+        public async Task<ActionRewardResult> Handle(TCommand request, CancellationToken cancellationToken)
         {
-            var userId = GetUserId(command);
+            var userId = GetUserId(request);
             var user = await _users.GetByUserIdAsync(new UserId(userId));
             if (user != null && user.GetStat(Action) >= 1)
             {
@@ -45,7 +45,7 @@ namespace Gamification.Application.Handlers
                 Points = Points,
                 ActionType = Action,
                 SourceEventId = Guid.NewGuid(),
-                Description = GetDescription(command)
+                Description = GetDescription(request)
             }, cancellationToken);
 
             return new ActionRewardResult { Rewarded = true, UnlockedAchievements = result.UnlockedAchievements };

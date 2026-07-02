@@ -5,16 +5,11 @@ namespace Gamification.Domain.Entities
 {
     public class UserAchievement : Entity
     {
-        public ValueObjects.UserId UserId { get; private set; }
-        public AchievementDefinition Achievement { get; private set; }
+        public ValueObjects.UserId UserId { get; private set; } = null!;
+        public AchievementDefinition Achievement { get; private set; } = null!;
         public DateTime UnlockedAt { get; private set; }
 
-        // Constructor de materialización para EF Core.
-        private UserAchievement()
-        {
-            UserId = null!;
-            Achievement = null!;
-        }
+        private UserAchievement() { }
 
         public UserAchievement(Guid id, ValueObjects.UserId userId, AchievementDefinition achievement, DateTime unlockedAt)
             : base(id)

@@ -19,7 +19,7 @@ namespace Gamification.Infrastructure.Cache
         private readonly IDatabase _db;
         public RedisRankingCache(IConnectionMultiplexer redis) => _db = redis.GetDatabase();
 
-        private string GetKey(RankingType rankingType, string? subjectCode) =>
+        private static string GetKey(RankingType rankingType, string? subjectCode) =>
             $"ranking:{rankingType}{(subjectCode != null ? ":" + subjectCode : "")}";
 
         public async Task<string?> GetTopRankingsAsync(RankingType rankingType, string? subjectCode) =>

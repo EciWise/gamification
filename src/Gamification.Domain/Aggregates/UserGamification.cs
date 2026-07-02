@@ -8,25 +8,17 @@ using Gamification.Domain.ValueObjects;
 
 namespace Gamification.Domain.Aggregates
 {
-    public class UserGamification : AggregateRoot<UserId>
+    public class UserGamification : AggregateRoot
     {
-        private List<UserActionStat> _actionStats = new();
+        private readonly List<UserActionStat> _actionStats = new();
         
-        public UserId UserId { get; private set; }
-        public Points TotalPoints { get; private set; }
-        public LevelDefinition CurrentLevel { get; private set; }
-        public ReputationScore ReputationScore { get; private set; }
+        public UserId UserId { get; private set; } = null!;
+        public Points TotalPoints { get; private set; } = null!;
+        public LevelDefinition CurrentLevel { get; private set; } = null!;
+        public ReputationScore ReputationScore { get; private set; } = null!;
         public IReadOnlyList<UserActionStat> ActionStats => _actionStats.AsReadOnly();
 
-        // Constructor de materialización para EF Core: las propiedades no anulables
-        // las puebla el proveedor al cargar desde la base de datos.
-        private UserGamification()
-        {
-            UserId = null!;
-            TotalPoints = null!;
-            CurrentLevel = null!;
-            ReputationScore = null!;
-        }
+        private UserGamification() { }
 
         public UserGamification(UserId userId, LevelDefinition initialLevel)
         {

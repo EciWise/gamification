@@ -6,22 +6,15 @@ namespace Gamification.Domain.Entities
 {
     public class PointTransaction : Entity
     {
-        public UserId UserId { get; private set; }
-        public Points Points { get; private set; }
+        public UserId UserId { get; private set; } = null!;
+        public Points Points { get; private set; } = null!;
         public ActionType ActionType { get; private set; }
-        public EventDescription Description { get; private set; }
+        public EventDescription Description { get; private set; } = null!;
         public Guid SourceEventId { get; private set; }
-        public IdempotencyKey IdempotencyKey { get; private set; }
+        public IdempotencyKey IdempotencyKey { get; private set; } = null!;
         public DateTime OccurredAt { get; private set; }
 
-        // Constructor de materialización para EF Core.
-        private PointTransaction()
-        {
-            UserId = null!;
-            Points = null!;
-            Description = null!;
-            IdempotencyKey = null!;
-        }
+        private PointTransaction() { }
 
         public PointTransaction(
             Guid id,

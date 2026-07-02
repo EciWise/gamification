@@ -319,9 +319,8 @@ namespace Gamification.Infrastructure.Messaging
             // { eventId, userId, eventType: "ForumPostCreated", postId, title, categoryId, createdAt, isReply }
 
             var userId = Guid.Parse(eventPayload.GetProperty("userId").GetString()!);
-            var postId = eventPayload.TryGetProperty("postId", out var post) ? post.GetString() : "unknown";
             var title = eventPayload.TryGetProperty("title", out var t) ? t.GetString() : "Sin título";
-            var isReply = eventPayload.TryGetProperty("isReply", out var reply) ? reply.GetBoolean() : false;
+            var isReply = eventPayload.TryGetProperty("isReply", out var reply) && reply.GetBoolean();
 
             var description = isReply ? $"Respuesta en foro: {title}" : $"Post en foro: {title}";
 
