@@ -12,7 +12,7 @@ namespace Gamification.Domain.Repositories
         Task SaveAsync(UserGamification userGamification);
 
         /// <summary>Niveles ordenados ascendentemente por puntos mínimos (para
-        /// provisión de usuarios y detección de subida de nivel) daniel.</summary>
+        /// provisión de usuarios y detección de subida de nivel).</summary>
         Task<List<LevelDefinition>> GetLevelsOrderedAsync();
     }
 }
