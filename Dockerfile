@@ -27,4 +27,6 @@ WORKDIR /app
 COPY --from=build /app/publish .
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
+# Ejecuta como usuario no-root (incluido en la imagen de .NET) por seguridad.
+USER app
 ENTRYPOINT ["dotnet", "Gamification.Api.dll"]
