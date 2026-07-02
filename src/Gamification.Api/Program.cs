@@ -44,11 +44,16 @@ public class Program
         // Add services to the container.
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-        //aqui puse los cors para que no me de error de CORS en el front, att Daniel
+        // Orígenes permitidos para CORS: configurables por entorno para no exponer
+        // el API a cualquier origen. Por defecto, el front local.
+        var corsOrigins = (Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
+                           ?? Environment.GetEnvironmentVariable("FRONTEND_URL")
+                           ?? "http://localhost:4200")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         builder.Services.AddCors(options =>
         {
             options.AddDefaultPolicy(policy =>
-                policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+                policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod());
         });
         builder.Services.AddSwaggerGen(c =>
         {
@@ -103,10 +108,13 @@ public class Program
         builder.Services.AddScoped<IRankingRepository, RankingRepository>();
         builder.Services.AddScoped<IUserAchievementRepository, UserAchievementRepository>();
 
-        // JWT Validation (Security)
+        // Secreto para validar los JWT: se toma de configuración o entorno, sin un
+        // valor por defecto embebido, para no dejar credenciales en el código.
         var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
+                        ?? Environment.GetEnvironmentVariable("JWT_SECRET")
                         ?? builder.Configuration.GetValue<string>("Jwt:SecretKey")
-                        ?? "your-super-secret-key-min-32-characters-long!!!";
+                        ?? throw new InvalidOperationException(
+                            "JWT secret no configurado. Define JWT_SECRET_KEY (o JWT_SECRET).");
         var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
                      ?? builder.Configuration.GetValue<string>("Jwt:Issuer");
         var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
