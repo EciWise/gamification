@@ -42,8 +42,9 @@ namespace Gamification.Infrastructure.Persistence.Repositories
 
         public async Task<List<LevelDefinition>> GetLevelsOrderedAsync()
         {
-            var levels = await _context.LevelDefinitions.ToListAsync();
-            return levels.OrderBy(l => l.MinPoints.Value).ToList();
+            return await _context.LevelDefinitions
+                .OrderBy(l => l.MinPoints.Value)
+                .ToListAsync();
         }
     }
 }
