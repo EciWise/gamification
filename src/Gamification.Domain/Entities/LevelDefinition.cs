@@ -5,8 +5,8 @@ namespace Gamification.Domain.Entities
 {
     public class LevelDefinition : Entity
     {
-        public string Name { get; private set; }
-        public Points MinPoints { get; private set; }
+        public string Name { get; private set; } = null!;
+        public Points MinPoints { get; private set; } = null!;
 
         private LevelDefinition() { }
 

@@ -8,14 +8,14 @@ using Gamification.Domain.ValueObjects;
 
 namespace Gamification.Domain.Aggregates
 {
-    public class UserGamification : AggregateRoot<UserId>
+    public class UserGamification : AggregateRoot
     {
-        private List<UserActionStat> _actionStats = new();
+        private readonly List<UserActionStat> _actionStats = new();
         
-        public UserId UserId { get; private set; }
-        public Points TotalPoints { get; private set; }
-        public LevelDefinition CurrentLevel { get; private set; }
-        public ReputationScore ReputationScore { get; private set; }
+        public UserId UserId { get; private set; } = null!;
+        public Points TotalPoints { get; private set; } = null!;
+        public LevelDefinition CurrentLevel { get; private set; } = null!;
+        public ReputationScore ReputationScore { get; private set; } = null!;
         public IReadOnlyList<UserActionStat> ActionStats => _actionStats.AsReadOnly();
 
         private UserGamification() { }
@@ -35,6 +35,18 @@ namespace Gamification.Domain.Aggregates
 
             TotalPoints = TotalPoints.Add(transaction.Points);
             AddDomainEvent(new PointsAddedEvent(Id, transaction.Points, transaction.ActionType));
+        }
+
+        /// <summary>
+        /// Level Up de test jijijiji
+        /// </summary>
+        public void PromoteTo(LevelDefinition newLevel)
+        {
+            if (newLevel == null) throw new ArgumentNullException(nameof(newLevel));
+            if (CurrentLevel != null && CurrentLevel.Id == newLevel.Id) return;
+
+            CurrentLevel = newLevel;
+            AddDomainEvent(new LevelUpEvent(Id, newLevel.Name));
         }
 
         public void IncrementStat(ActionType actionType, int amount = 1)
@@ -60,9 +72,10 @@ namespace Gamification.Domain.Aggregates
         {
             if (achievement == null) throw new ArgumentNullException(nameof(achievement));
 
-            var userAchievement = new UserAchievement(Guid.NewGuid(), UserId, achievement, DateTime.UtcNow);
-            // In a real app we'd add it to a _achievements collection probably, but keeping it simple based on diagram provided.
-            
+            // `UserId` (VO) está marcada como Ignore en EF, por lo que es null en
+            // entidades materializadas desde BD. `Id` (Guid) siempre está poblado.
+            var userAchievement = new UserAchievement(Guid.NewGuid(), new UserId(Id), achievement, DateTime.UtcNow);
+            AddDomainEvent(new AchievementUnlockedEvent(Id, achievement.Id));
             return userAchievement;
         }
     }

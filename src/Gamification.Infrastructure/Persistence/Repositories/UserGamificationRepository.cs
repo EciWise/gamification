@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Gamification.Domain.Aggregates;
+using Gamification.Domain.Entities;
 using Gamification.Domain.Repositories;
 using Gamification.Domain.ValueObjects;
 
@@ -35,6 +38,13 @@ namespace Gamification.Infrastructure.Persistence.Repositories
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<LevelDefinition>> GetLevelsOrderedAsync()
+        {
+            return await _context.LevelDefinitions
+                .OrderBy(l => l.MinPoints.Value)
+                .ToListAsync();
         }
     }
 }

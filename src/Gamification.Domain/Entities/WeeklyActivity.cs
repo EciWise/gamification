@@ -5,9 +5,9 @@ namespace Gamification.Domain.Entities
 {
     public class WeeklyActivity : Entity
     {
-        public UserId UserId { get; private set; }
+        public UserId UserId { get; private set; } = null!;
         public DateTime WeekStart { get; private set; }
-        public Points PointsEarned { get; private set; }
+        public Points PointsEarned { get; private set; } = null!;
         public int ActionsCount { get; private set; }
         public DateTime RecordedAt { get; private set; }
 

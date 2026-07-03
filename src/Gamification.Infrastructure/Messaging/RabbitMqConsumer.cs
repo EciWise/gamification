@@ -25,6 +25,18 @@ namespace Gamification.Infrastructure.Messaging
         private IConnection? _connection;
         private IChannel? _channel;
 
+        /// <summary>Exchange interno de eventos de dominio (tutoring/materials).</summary>
+        private const string InternalEventsExchange = "eciwise.events";
+
+        /// <summary>Routing keys de eventos de dominio que premia gamificación.</summary>
+        private static readonly string[] InternalRoutingKeys =
+        {
+            "tutoria.realizada",
+            "tutoria.dictada",
+            "tutoria.calificada",
+            "material.aprobado"
+        };
+
         public RabbitMqConsumer(ILogger<RabbitMqConsumer> logger, IServiceProvider serviceProvider, IJwtValidator jwtValidator)
         {
             _logger = logger;
@@ -55,6 +67,16 @@ namespace Gamification.Infrastructure.Messaging
                     _connection = await factory.CreateConnectionAsync(stoppingToken);
                     _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
                     await _channel.QueueDeclareAsync(queue: "gamification_events_queue", durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: stoppingToken);
+
+                    // Bus de eventos de dominio interno (tutoring/materials). Estos
+                    // eventos llegan por un exchange topic dedicado y se consideran de
+                    // confianza (no requieren JWT, ver ExecuteAsync).
+                    await _channel.ExchangeDeclareAsync(InternalEventsExchange, ExchangeType.Topic, durable: true, autoDelete: false, cancellationToken: stoppingToken);
+                    foreach (var routingKey in InternalRoutingKeys)
+                    {
+                        await _channel.QueueBindAsync("gamification_events_queue", InternalEventsExchange, routingKey, cancellationToken: stoppingToken);
+                    }
+
                     _logger.LogInformation("Successfully connected to RabbitMQ.");
                     return;
                 }
@@ -93,30 +115,43 @@ namespace Gamification.Infrastructure.Messaging
 
                 try
                 {
-                    // Validar JWT desde los headers del mensaje
-                    var jwtToken = ExtractJwtFromHeaders(ea.BasicProperties);
-                    if (string.IsNullOrWhiteSpace(jwtToken))
+                    // Los eventos de dominio internos llegan por el exchange de confianza
+                    // `eciwise.events` (publicados por otros microservicios, sin JWT de
+                    // usuario). El resto de mensajes sí requiere un JWT válido.
+                    var isInternalEvent = ea.Exchange == InternalEventsExchange;
+                    if (!isInternalEvent)
                     {
-                        _logger.LogWarning("Rejecting message: JWT token not found in message headers.");
-                        await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
-                        return;
-                    }
+                        var jwtToken = ExtractJwtFromHeaders(ea.BasicProperties);
+                        if (string.IsNullOrWhiteSpace(jwtToken))
+                        {
+                            _logger.LogWarning("Rejecting message: JWT token not found in message headers.");
+                            await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                            return;
+                        }
 
-                    if (!_jwtValidator.ValidateToken(jwtToken, out _))
-                    {
-                        _logger.LogWarning("Rejecting message: JWT token validation failed.");
-                        await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
-                        return;
+                        if (!_jwtValidator.ValidateToken(jwtToken, out _))
+                        {
+                            _logger.LogWarning("Rejecting message: JWT token validation failed.");
+                            await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                            return;
+                        }
                     }
 
                     var eventPayload = JsonDocument.Parse(message).RootElement;
                     var eventType = eventPayload.GetProperty("eventType").GetString();
+                    var eventIdRaw = eventPayload.GetProperty("eventId").GetString();
+
+                    if (string.IsNullOrWhiteSpace(eventType) || !Guid.TryParse(eventIdRaw, out var eventId))
+                    {
+                        _logger.LogWarning("Rejecting malformed message: missing eventType or eventId.");
+                        await channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                        return;
+                    }
 
                     using var scope = _serviceProvider.CreateScope();
                     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-                    
-                    var eventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString());
+
                     if (await dbContext.ProcessedEvents.AnyAsync(e => e.EventId == eventId, cancellationToken: stoppingToken))
                     {
                         _logger.LogWarning("Event {EventId} already processed. Skipping.", eventId);
@@ -145,6 +180,23 @@ namespace Gamification.Infrastructure.Messaging
 
                         case "ForumPostCreated":
                             await HandleForumPostCreatedAsync(eventPayload, mediator, stoppingToken);
+                            break;
+
+                        // Eventos de dominio internos (exchange eciwise.events).
+                        case "tutoria.realizada":
+                            await HandleDomainPointsAsync(eventPayload, mediator, ActionType.TutoriaCompletada, 10, "Tutoría completada", stoppingToken);
+                            break;
+
+                        case "tutoria.dictada":
+                            await HandleDomainPointsAsync(eventPayload, mediator, ActionType.TutoriaDictada, 15, "Tutoría dictada", stoppingToken);
+                            break;
+
+                        case "tutoria.calificada":
+                            await HandleDomainPointsAsync(eventPayload, mediator, ActionType.TutoriaCalificada, 25, "Tutoría calificada", stoppingToken);
+                            break;
+
+                        case "material.aprobado":
+                            await HandleDomainPointsAsync(eventPayload, mediator, ActionType.MaterialAprobado, 20, "Material aprobado", stoppingToken);
                             break;
 
                         default:
@@ -267,9 +319,8 @@ namespace Gamification.Infrastructure.Messaging
             // { eventId, userId, eventType: "ForumPostCreated", postId, title, categoryId, createdAt, isReply }
 
             var userId = Guid.Parse(eventPayload.GetProperty("userId").GetString()!);
-            var postId = eventPayload.TryGetProperty("postId", out var post) ? post.GetString() : "unknown";
             var title = eventPayload.TryGetProperty("title", out var t) ? t.GetString() : "Sin título";
-            var isReply = eventPayload.TryGetProperty("isReply", out var reply) ? reply.GetBoolean() : false;
+            var isReply = eventPayload.TryGetProperty("isReply", out var reply) && reply.GetBoolean();
 
             var description = isReply ? $"Respuesta en foro: {title}" : $"Post en foro: {title}";
 
@@ -279,6 +330,31 @@ namespace Gamification.Infrastructure.Messaging
                 Points = 5,
                 ActionType = ActionType.ForoPublicado,
                 SourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()!),
+                Description = description
+            };
+            await mediator.Send(command, cancellationToken);
+        }
+
+        /// <summary>
+        /// Asigna puntos por un evento de dominio interno usando el valor por defecto recibido.
+        /// </summary>
+        private async Task HandleDomainPointsAsync(
+            JsonElement eventPayload,
+            IMediator mediator,
+            ActionType actionType,
+            int defaultPoints,
+            string description,
+            CancellationToken cancellationToken)
+        {
+            var userId = Guid.Parse(eventPayload.GetProperty("userId").GetString()!);
+            var sourceEventId = Guid.Parse(eventPayload.GetProperty("eventId").GetString()!);
+
+            var command = new AssignPointsCommand
+            {
+                UserId = userId,
+                Points = defaultPoints,
+                ActionType = actionType,
+                SourceEventId = sourceEventId,
                 Description = description
             };
             await mediator.Send(command, cancellationToken);

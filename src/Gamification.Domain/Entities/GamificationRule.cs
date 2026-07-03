@@ -7,7 +7,7 @@ namespace Gamification.Domain.Entities
     public class GamificationRule : Entity
     {
         public ActionType ActionType { get; private set; }
-        public Points PointsAwarded { get; private set; }
+        public Points PointsAwarded { get; private set; } = null!;
         public bool IsActive { get; private set; }
 
         private GamificationRule() { }

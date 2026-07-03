@@ -29,7 +29,7 @@ namespace Gamification.Infrastructure.Persistence
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("RankingJob running at: {time}", DateTimeOffset.Now);
+                _logger.LogInformation("RankingJob running at: {Time}", DateTimeOffset.Now);
 
                 try
                 {

@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
     container_name: gamification-postgres
     environment:
-      POSTGRES_USER: gamification_user
-      POSTGRES_PASSWORD: Segura123!
-      POSTGRES_DB: gamification_db
+      POSTGRES_USER: ${POSTGRES_USER:-gamification_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gamification_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-gamification_db}
     ports:
       - "5432:5432"
     volumes:
@@ -29,8 +27,8 @@ services:
     image: rabbitmq:3.12-management-alpine
     container_name: gamification-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
     ports:
       - "5672:5672"
       - "15672:15672"

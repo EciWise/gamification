@@ -4,7 +4,7 @@ using Gamification.Domain.Entities;
 
 namespace Gamification.Domain.Aggregates
 {
-    public abstract class AggregateRoot<TId> : Entity
+    public abstract class AggregateRoot : Entity
     {
         private readonly List<DomainEvent> _domainEvents = new();
         public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
