@@ -5,8 +5,8 @@ namespace Gamification.Domain.Entities
 {
     public class UserAchievement : Entity
     {
-        public ValueObjects.UserId UserId { get; private set; }
-        public AchievementDefinition Achievement { get; private set; }
+        public ValueObjects.UserId UserId { get; private set; } = null!;
+        public AchievementDefinition Achievement { get; private set; } = null!;
         public DateTime UnlockedAt { get; private set; }
 
         private UserAchievement() { }

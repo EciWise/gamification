@@ -66,7 +66,7 @@ Microservicio robusto y seguro para gestionar gamificación (puntos, logros, ran
 
 ```bash
 # Inicia los servicios de infraestructura
-docker-compose up -d
+docker compose up -d
 
 # El servicio se conectará a:
 # - PostgreSQL: localhost:5432 (gamification_user / Segura123!)
@@ -168,7 +168,7 @@ gamification/
 │   ├── Gamification.Domain.Tests/
 │   ├── Gamification.Application.Tests/
 │   └── Gamification.Integration.Tests/
-├── docker-compose.yml
+├── compose.yaml
 ├── .env.example
 └── Gamification.slnx
 ```

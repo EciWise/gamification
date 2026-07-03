@@ -65,7 +65,7 @@ public class JwtValidator : IJwtValidator
             };
 
             // ValidateToken requires a SecurityToken out parameter
-            principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
+            principal = tokenHandler.ValidateToken(token, validationParameters, out _);
             _logger?.LogInformation("JWT token validated successfully. Subject: {Subject}", principal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown");
             return true;
         }

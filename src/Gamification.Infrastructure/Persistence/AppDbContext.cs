@@ -1,3 +1,7 @@
+using System.Linq;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Gamification.Domain.Aggregates;
 using Gamification.Domain.Entities;
@@ -21,6 +25,46 @@ namespace Gamification.Infrastructure.Persistence
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            DispatchDomainEventsToOutbox();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override int SaveChanges()
+        {
+            DispatchDomainEventsToOutbox();
+            return base.SaveChanges();
+        }
+
+        /// <summary>
+        /// Vuelca los eventos de dominio acumulados en los agregados rastreados a la
+        /// tabla `outbox`, en la misma transacción que el cambio de estado. El
+        /// `OutboxWorker` los publica luego de forma asíncrona (patrón Outbox).
+        /// </summary>
+        private void DispatchDomainEventsToOutbox()
+        {
+            var aggregates = ChangeTracker.Entries<UserGamification>()
+                .Select(e => e.Entity)
+                .Where(a => a.DomainEvents.Count > 0)
+                .ToList();
+
+            foreach (var aggregate in aggregates)
+            {
+                foreach (var domainEvent in aggregate.DomainEvents)
+                {
+                    Outbox.Add(new OutboxEvent
+                    {
+                        EventType = domainEvent.GetType().Name,
+                        AggregateId = aggregate.Id.ToString(),
+                        Payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType()),
+                        OccurredAt = domainEvent.OccurredOn
+                    });
+                }
+                aggregate.ClearDomainEvents();
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
