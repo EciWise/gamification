@@ -243,6 +243,8 @@ builder.Services.AddHostedService<RankingJob>();
             Def("Imparable", "Acumula 500 puntos", "POINTS_500"),
             // Perfil — completar el perfil de IA
             Def("La IA ya sabe dónde vives", "Completa tu perfil de IA; ahora el algoritmo te conoce mejor que tu propia madre", "AI_PROFILE_COMPLETED"),
+            // Perfil — confirmar y bloquear las carreras
+            Def("Hasta que la muerte los separe", "Confirmaste tus carreras y las bloqueaste para siempre. Ahora tú y tu programa son uno solo: sin divorcios académicos", "CAREERS_COMPLETED"),
             // Ayuda — abrir una pregunta del Centro de Ayuda
             Def("Perdidasss, andamos perdidasss!", "Abriste tu primera pregunta del Centro de Ayuda. Tranqui: aquí siempre encuentras el camino de vuelta", "HELP_QUESTION_OPENED")
         };
@@ -293,6 +295,7 @@ public class AchievementStrategyFactory : IAchievementStrategyFactory
             new MentorOfMonthStrategy(),
             // Perfil
             new AiProfileCompletedStrategy(),
+            new CareersCompletedStrategy(),
             // Ayuda
             new HelpQuestionOpenedStrategy()
         };

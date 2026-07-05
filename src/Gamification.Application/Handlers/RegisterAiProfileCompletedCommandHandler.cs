@@ -6,7 +6,7 @@ using Gamification.Domain.Repositories;
 
 namespace Gamification.Application.Handlers
 {
-    /// <summary>Otorga 10 puntos y el logro de perfil de IA la primera vez.</summary>
+    /// <summary>Otorga 20 puntos y el logro de perfil de IA la primera vez.</summary>
     public sealed class RegisterAiProfileCompletedCommandHandler
         : OneTimeRewardCommandHandler<RegisterAiProfileCompletedCommand>
     {
@@ -17,7 +17,7 @@ namespace Gamification.Application.Handlers
 
         protected override Guid GetUserId(RegisterAiProfileCompletedCommand command) => command.UserId;
         protected override ActionType Action => ActionType.PerfilIACompletado;
-        protected override int Points => 10;
+        protected override int Points => 20;
         protected override string GetDescription(RegisterAiProfileCompletedCommand command) => "Perfil de IA completado";
     }
 }

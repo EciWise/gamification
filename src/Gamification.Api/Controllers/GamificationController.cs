@@ -135,6 +135,18 @@ namespace Gamification.Api.Controllers
             return Ok(new { rewarded = result.Rewarded, unlockedAchievements = result.UnlockedAchievements });
         }
 
+        /// <summary>Registers that a user confirmed and locked their careers (one-time reward).</summary>
+        [HttpPost("users/{userId}/careers/completed")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> RegisterCareersCompleted(Guid userId)
+        {
+            var result = await _mediator.Send(new RegisterCareersCompletedCommand
+            {
+                UserId = userId
+            });
+            return Ok(new { rewarded = result.Rewarded, unlockedAchievements = result.UnlockedAchievements });
+        }
+
         /// <summary>Registers that a user opened a Help Center question (one-time achievement).</summary>
         [HttpPost("users/{userId}/help/opened")]
         [ProducesResponseType(StatusCodes.Status200OK)]

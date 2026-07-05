@@ -199,6 +199,17 @@ namespace Gamification.Domain.Services
         }
     }
 
+    /// <summary>"Hasta que la muerte los separe": confirmar y bloquear las carreras.</summary>
+    public class CareersCompletedStrategy : IAchievementStrategy
+    {
+        public string StrategyKey => "CAREERS_COMPLETED";
+
+        public bool Evaluate(UserGamification user, UserActionStat[] stats, CriteriaConfig config, AchievementContext context)
+        {
+            return stats.Any(s => s.ActionType == ActionType.CarrerasCompletadas && s.Count >= 1);
+        }
+    }
+
     /// <summary>"Perdidasss, andamos perdidasss!": abrir una pregunta del Centro de Ayuda.</summary>
     public class HelpQuestionOpenedStrategy : IAchievementStrategy
     {
