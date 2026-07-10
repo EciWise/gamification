@@ -32,6 +32,14 @@ namespace Gamification.Domain.Repositories
         Task<List<UserActionStat>> GetByUserIdAsync(UserId userId);
     }
 
+    public interface IUserAchievementRepository
+    {
+        Task<List<UserAchievement>> GetByUserIdAsync(UserId userId);
+        /// <summary>Rastrea nuevos logros para insertarlos; se persisten en el
+        /// SaveChangesAsync del agregado (misma transacción). Att Daniel</summary>
+        void AddRange(IEnumerable<UserAchievement> achievements);
+    }
+
     public interface IWeeklyActivityRepository
     {
         Task<WeeklyActivity?> GetCurrentWeekAsync(UserId userId);

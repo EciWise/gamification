@@ -7,6 +7,11 @@ namespace Gamification.Domain.Enums
         TutoriaDictada,
         MaterialAprobado,
         TutoriaCalificada,
-        ForoPublicado
+        ForoPublicado,
+        JuegoJugado,
+        QuizCompletado,
+        SesionEstudio,
+        PerfilIACompletado,
+        AyudaPreguntaAbierta
     }
 }

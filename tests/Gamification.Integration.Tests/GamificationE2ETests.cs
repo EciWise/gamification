@@ -30,6 +30,12 @@ namespace Gamification.Integration.Tests
         public async Task Flow_AssignPoints_And_GetRanking()
         {
             // Arrange
+            // El host exige un secreto JWT configurado; usamos uno aleatorio en
+            // memoria (no un literal) para no fijar credenciales en las pruebas.
+            Environment.SetEnvironmentVariable(
+                "JWT_SECRET_KEY",
+                Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)));
+
             var userId = Guid.NewGuid();
             var factory = _factory.WithWebHostBuilder(builder =>
             {
