@@ -41,6 +41,7 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllers();
+
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(c =>
         {
@@ -58,6 +59,7 @@ public class Program
 
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
             if (File.Exists(xmlPath))
             {
                 c.IncludeXmlComments(xmlPath);
@@ -66,6 +68,7 @@ public class Program
 
         // Resolve Connection String
         var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION");
+
         if (string.IsNullOrEmpty(connectionString))
         {
             var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST");
@@ -74,9 +77,12 @@ public class Program
             var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
             var dbPass = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
 
-            if (!string.IsNullOrEmpty(dbHost) && !string.IsNullOrEmpty(dbName) && !string.IsNullOrEmpty(dbUser))
+            if (!string.IsNullOrEmpty(dbHost) &&
+                !string.IsNullOrEmpty(dbName) &&
+                !string.IsNullOrEmpty(dbUser))
             {
-                connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};";
+                connectionString =
+                    $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};";
             }
             else
             {
@@ -94,12 +100,14 @@ public class Program
         builder.Services.AddScoped<IGamificationRuleRepository, GamificationRuleRepository>();
         builder.Services.AddScoped<IRankingRepository, RankingRepository>();
 
-        // JWT Validation (Security)
+        // JWT Validation
         var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
                         ?? builder.Configuration.GetValue<string>("Jwt:SecretKey")
                         ?? "your-super-secret-key-min-32-characters-long!!!";
+
         var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
                      ?? builder.Configuration.GetValue<string>("Jwt:Issuer");
+
         var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
                        ?? builder.Configuration.GetValue<string>("Jwt:Audience");
 
@@ -114,33 +122,41 @@ public class Program
         builder.Services.AddSingleton<IAchievementStrategyFactory, AchievementStrategyFactory>();
 
         // MediatR
-        builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Gamification.Application.Handlers.AssignPointsCommandHandler).Assembly));
+        builder.Services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(
+                typeof(Gamification.Application.Handlers.AssignPointsCommandHandler).Assembly));
 
         // Redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var connectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost";
-            return ConnectionMultiplexer.Connect(connectionString);
+            var redisConnection =
+                builder.Configuration.GetValue<string>("Redis:ConnectionString")
+                ?? "localhost";
+
+            return ConnectionMultiplexer.Connect(redisConnection);
         });
+
         builder.Services.AddScoped<IRankingCache, RedisRankingCache>();
 
         // Background Services
         builder.Services.AddHostedService<RabbitMqConsumer>();
         builder.Services.AddHostedService<OutboxWorker>();
-builder.Services.AddHostedService<RankingJob>();
+        builder.Services.AddHostedService<RankingJob>();
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
+        // Enable Swagger in all environments
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Gamification Service API v1");
+            c.RoutePrefix = "swagger";
+        });
 
         using (var scope = app.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
             try
             {
                 dbContext.Database.EnsureCreated();
@@ -153,14 +169,16 @@ builder.Services.AddHostedService<RankingJob>();
         }
 
         app.UseHttpsRedirection();
+
         app.UseAuthorization();
+
         app.MapControllers();
 
         app.Run();
     }
 }
 
-// Inner class for strategy factory (could be moved to Domain/Services)
+// Inner class for strategy factory
 public class AchievementStrategyFactory : IAchievementStrategyFactory
 {
     private readonly IEnumerable<IAchievementStrategy> _strategies;
