@@ -148,16 +148,17 @@ public class Program
         // Background Services
         builder.Services.AddHostedService<RabbitMqConsumer>();
         builder.Services.AddHostedService<OutboxWorker>();
-builder.Services.AddHostedService<RankingJob>();
+        builder.Services.AddHostedService<RankingJob>();
 
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Gamification Service API v1");
+            c.RoutePrefix = "swagger";
+        });
 
         using (var scope = app.Services.CreateScope())
         {
@@ -175,6 +176,7 @@ builder.Services.AddHostedService<RankingJob>();
             }
         }
 
+        app.UseHttpsRedirection();
         app.UseCors();
         app.UseAuthorization();
         app.MapControllers();

@@ -495,3 +495,7 @@ secrets.json
 # 📋 Configuración de IDE local
 .vscode/settings.json
 .idea/
+
+
+Reporte_Gamification_Service.docx
+generate_report.js
