@@ -78,24 +78,8 @@ public class Program
         });
 
         // Resolve Connection String
-        var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION");
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            var dbHost = Environment.GetEnvironmentVariable("POSTGRES_HOST");
-            var dbPort = Environment.GetEnvironmentVariable("POSTGRES_PORT") ?? "5432";
-            var dbName = Environment.GetEnvironmentVariable("POSTGRES_DB");
-            var dbUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
-            var dbPass = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
-
-            if (!string.IsNullOrEmpty(dbHost) && !string.IsNullOrEmpty(dbName) && !string.IsNullOrEmpty(dbUser))
-            {
-                connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};";
-            }
-            else
-            {
-                connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            }
-        }
+        var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION")
+                            ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
         // Database
         builder.Services.AddDbContext<AppDbContext>(options =>
@@ -111,10 +95,9 @@ public class Program
         // Secreto para validar los JWT: se toma de configuración o entorno, sin un
         // valor por defecto embebido, para no dejar credenciales en el código.
         var jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
-                        ?? Environment.GetEnvironmentVariable("JWT_SECRET")
                         ?? builder.Configuration.GetValue<string>("Jwt:SecretKey")
                         ?? throw new InvalidOperationException(
-                            "JWT secret no configurado. Define JWT_SECRET_KEY (o JWT_SECRET).");
+                            "JWT secret no configurado. Define JWT_SECRET_KEY.");
         var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
                      ?? builder.Configuration.GetValue<string>("Jwt:Issuer");
         var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
@@ -136,8 +119,10 @@ public class Program
         // Redis
         builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var connectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost";
-            return ConnectionMultiplexer.Connect(connectionString);
+            var redisConnStr = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
+                            ?? builder.Configuration.GetValue<string>("Redis:ConnectionString") 
+                            ?? "localhost";
+            return ConnectionMultiplexer.Connect(redisConnStr);
         });
         builder.Services.AddScoped<IRankingCache, RedisRankingCache>();
 
