@@ -42,6 +42,21 @@ namespace Gamification.Infrastructure.Persistence.Repositories
             await _context.GamificationRules.Where(r => r.IsActive).ToListAsync();
     }
 
+    public class UserAchievementRepository : IUserAchievementRepository
+    {
+        private readonly AppDbContext _context;
+        public UserAchievementRepository(AppDbContext context) => _context = context;
+
+        public async Task<List<UserAchievement>> GetByUserIdAsync(UserId userId) =>
+            await _context.UserAchievements
+                .Include(ua => ua.Achievement)
+                .Where(ua => ua.UserId == userId)
+                .ToListAsync();
+
+        public void AddRange(IEnumerable<UserAchievement> achievements) =>
+            _context.UserAchievements.AddRange(achievements);
+    }
+
     public class RankingRepository : IRankingRepository
     {
         private readonly AppDbContext _context;
@@ -51,7 +66,7 @@ namespace Gamification.Infrastructure.Persistence.Repositories
         {
             var query = _context.Rankings.Include(r => r.Entries).Where(r => r.Type == type);
             if (subjectCode != null)
-                query = query.Where(r => r.SubjectCode.Value == subjectCode.Value);
+                query = query.Where(r => r.SubjectCode != null && r.SubjectCode.Value == subjectCode.Value);
 
             return await query.OrderByDescending(r => r.Period.End).FirstOrDefaultAsync();
         }
