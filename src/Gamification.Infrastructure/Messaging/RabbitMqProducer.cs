@@ -41,7 +41,7 @@ namespace Gamification.Infrastructure.Messaging
                 {
                     HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost",
                     UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest",
-                    Password = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest"
+                    Password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest"
                 };
 
                 _connection = await factory.CreateConnectionAsync(cancellationToken);

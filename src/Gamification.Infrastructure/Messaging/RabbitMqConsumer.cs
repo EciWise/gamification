@@ -48,7 +48,7 @@ namespace Gamification.Infrastructure.Messaging
         {
             var host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
             var user = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
-            var pass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
+            var pass = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest";
 
             var factory = new ConnectionFactory 
             { 
