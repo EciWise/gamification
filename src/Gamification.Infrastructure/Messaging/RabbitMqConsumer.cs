@@ -70,7 +70,7 @@ namespace Gamification.Infrastructure.Messaging
             {
                 try
                 {
-                    _logger.LogInformation("Connecting to RabbitMQ at {Host}...", host);
+                    _logger.LogInformation("Connecting to RabbitMQ at {Host}...", factory.HostName);
                     _connection = await factory.CreateConnectionAsync(stoppingToken);
                     _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
                     await _channel.QueueDeclareAsync(queue: "gamification_events_queue", durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: stoppingToken);
