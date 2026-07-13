@@ -46,16 +46,23 @@ namespace Gamification.Infrastructure.Messaging
 
         private async Task InitializeRabbitMqListenerAsync(CancellationToken stoppingToken)
         {
-            var host = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
-            var user = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
-            var pass = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest";
-
-            var factory = new ConnectionFactory 
-            { 
-                HostName = host,
-                UserName = user,
-                Password = pass
-            };
+            var factory = new ConnectionFactory();
+            var rabbitUri = Environment.GetEnvironmentVariable("RABBITMQ_CONNECTION");
+            if (!string.IsNullOrEmpty(rabbitUri))
+            {
+                factory.Uri = new Uri(rabbitUri);
+            }
+            else
+            {
+                factory.HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+                factory.UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
+                factory.Password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest";
+                var vhost = Environment.GetEnvironmentVariable("RABBITMQ_VHOST");
+                if (!string.IsNullOrEmpty(vhost))
+                {
+                    factory.VirtualHost = vhost;
+                }
+            }
 
             int retryCount = 0;
             int maxRetries = 10;
