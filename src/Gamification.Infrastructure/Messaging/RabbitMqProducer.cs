@@ -37,12 +37,23 @@ namespace Gamification.Infrastructure.Messaging
                     return _connection;
                 }
 
-                var factory = new ConnectionFactory
+                var factory = new ConnectionFactory();
+                var rabbitUri = Environment.GetEnvironmentVariable("RABBITMQ_CONNECTION");
+                if (!string.IsNullOrEmpty(rabbitUri))
                 {
-                    HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost",
-                    UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest",
-                    Password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest"
-                };
+                    factory.Uri = new Uri(rabbitUri);
+                }
+                else
+                {
+                    factory.HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+                    factory.UserName = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
+                    factory.Password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest";
+                    var vhost = Environment.GetEnvironmentVariable("RABBITMQ_VHOST");
+                    if (!string.IsNullOrEmpty(vhost))
+                    {
+                        factory.VirtualHost = vhost;
+                    }
+                }
 
                 _connection = await factory.CreateConnectionAsync(cancellationToken);
                 return _connection;
