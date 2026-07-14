@@ -14,10 +14,10 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf406c05a286dbbcec772e3 # v4.1.7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@6db8373b502f2e497c3011db657a824eccd5d60e # v4.0.1
         with:
           dotnet-version: '10.x'
 
@@ -30,7 +30,7 @@ jobs:
       - name: Publish
         run: dotnet publish src/Gamification.Api/Gamification.Api.csproj --configuration Release --no-build --output ${{ env.DOTNET_ROOT }}/myapp
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: .net-app
           path: ${{ env.DOTNET_ROOT }}/myapp
@@ -44,12 +44,12 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec807dbf # v4.1.8
         with:
           name: .net-app
       
       - name: Login to Azure
-        uses: azure/login@v2
+        uses: azure/login@11222441c888d3af7df11b22e1855a9d68249b6d # v2.2.0
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6A3BCFBE67784D2D995886F9127386CA }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DC80AA9A3DD7456B894A77CAFB28EABF }}
@@ -57,26 +57,39 @@ jobs:
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@c29ef8f2c3d5272a275465cfa8f4f107f9011dfb # v3.0.1
         with:
           app-name: 'gamification'
           slot-name: 'Production'
           package: .
 
       - name: Configure Azure App Service Environment Variables
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          POSTGRES_CONNECTION: ${{ secrets.POSTGRES_CONNECTION }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+          JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
+          REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+          RABBITMQ_HOST: ${{ secrets.RABBITMQ_HOST }}
+          RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
+          RABBITMQ_VHOST: ${{ secrets.RABBITMQ_VHOST }}
+          RABBITMQ_CONNECTION: ${{ secrets.RABBITMQ_CONNECTION }}
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
         run: |
           az webapp config appsettings set \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
             --name "gamification" \
             --settings \
-              POSTGRES_CONNECTION="${{ secrets.POSTGRES_CONNECTION }}" \
-              JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
-              JWT_ISSUER="${{ secrets.JWT_ISSUER }}" \
-              JWT_AUDIENCE="${{ secrets.JWT_AUDIENCE }}" \
-              REDIS_CONNECTION_STRING="${{ secrets.REDIS_CONNECTION_STRING }}" \
-              RABBITMQ_HOST="${{ secrets.RABBITMQ_HOST }}" \
-              RABBITMQ_USER="${{ secrets.RABBITMQ_USER }}" \
-              RABBITMQ_PASSWORD="${{ secrets.RABBITMQ_PASSWORD }}" \
-              RABBITMQ_VHOST="${{ secrets.RABBITMQ_VHOST }}" \
-              RABBITMQ_CONNECTION="${{ secrets.RABBITMQ_CONNECTION }}" \
-              CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
+              POSTGRES_CONNECTION="$POSTGRES_CONNECTION" \
+              JWT_SECRET_KEY="$JWT_SECRET_KEY" \
+              JWT_ISSUER="$JWT_ISSUER" \
+              JWT_AUDIENCE="$JWT_AUDIENCE" \
+              REDIS_CONNECTION_STRING="$REDIS_CONNECTION_STRING" \
+              RABBITMQ_HOST="$RABBITMQ_HOST" \
+              RABBITMQ_USER="$RABBITMQ_USER" \
+              RABBITMQ_PASSWORD="$RABBITMQ_PASSWORD" \
+              RABBITMQ_VHOST="$RABBITMQ_VHOST" \
+              RABBITMQ_CONNECTION="$RABBITMQ_CONNECTION" \
+              CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS"
