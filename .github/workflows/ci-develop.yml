@@ -12,10 +12,10 @@ jobs:
 
     steps:
     - name: Checkout del código
-      uses: actions/checkout@692973e3d937129bcbf406c05a286dbbcec772e3 # v4.1.7
+      uses: actions/checkout@v4 # v4.1.7
 
     - name: Configurar .NET 10
-      uses: actions/setup-dotnet@6db8373b502f2e497c3011db657a824eccd5d60e # v4.0.1
+      uses: actions/setup-dotnet@v4 # v4.0.1
       with:
         dotnet-version: '10.0.x'
 
