@@ -209,4 +209,15 @@ namespace Gamification.Domain.Services
             return stats.Any(s => s.ActionType == ActionType.AyudaPreguntaAbierta && s.Count >= 1);
         }
     }
+
+    /// <summary>"Hasta que la muerte los separe": completar la información de carrera.</summary>
+    public class CareerInfoCompletedStrategy : IAchievementStrategy
+    {
+        public string StrategyKey => "CAREER_INFO_COMPLETED";
+
+        public bool Evaluate(UserGamification user, UserActionStat[] stats, CriteriaConfig config, AchievementContext context)
+        {
+            return stats.Any(s => s.ActionType == ActionType.CarreraInfoCompletada && s.Count >= 1);
+        }
+    }
 }

@@ -147,6 +147,18 @@ namespace Gamification.Api.Controllers
             return Ok(new { rewarded = result.Rewarded, unlockedAchievements = result.UnlockedAchievements });
         }
 
+        /// <summary>Registers that a user completed their career information (one-time achievement).</summary>
+        [HttpPost("users/{userId}/career-info/completed")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> RegisterCareerInfoCompleted(Guid userId)
+        {
+            var result = await _mediator.Send(new RegisterCareerInfoCompletedCommand
+            {
+                UserId = userId
+            });
+            return Ok(new { rewarded = result.Rewarded, unlockedAchievements = result.UnlockedAchievements });
+        }
+
         /// <summary>
         /// Retrieves the level ladder (name + minimum points) for badge display.
         /// </summary>
