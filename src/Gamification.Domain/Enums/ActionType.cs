@@ -12,6 +12,7 @@ namespace Gamification.Domain.Enums
         QuizCompletado,
         SesionEstudio,
         PerfilIACompletado,
-        AyudaPreguntaAbierta
+        AyudaPreguntaAbierta,
+        CarreraInfoCompletada
     }
 }

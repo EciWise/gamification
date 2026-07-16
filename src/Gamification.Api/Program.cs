@@ -283,7 +283,9 @@ public class AchievementStrategyFactory : IAchievementStrategyFactory
             // Perfil
             new AiProfileCompletedStrategy(),
             // Ayuda
-            new HelpQuestionOpenedStrategy()
+            new HelpQuestionOpenedStrategy(),
+            // Perfil
+            new CareerInfoCompletedStrategy()
         };
     }
 
