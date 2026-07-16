@@ -231,7 +231,9 @@ public class Program
             // Perfil — completar el perfil de IA
             Def("La IA ya sabe dónde vives", "Completa tu perfil de IA; ahora el algoritmo te conoce mejor que tu propia madre", "AI_PROFILE_COMPLETED"),
             // Ayuda — abrir una pregunta del Centro de Ayuda
-            Def("Perdidasss, andamos perdidasss!", "Abriste tu primera pregunta del Centro de Ayuda. Tranqui: aquí siempre encuentras el camino de vuelta", "HELP_QUESTION_OPENED")
+            Def("Perdidasss, andamos perdidasss!", "Abriste tu primera pregunta del Centro de Ayuda. Tranqui: aquí siempre encuentras el camino de vuelta", "HELP_QUESTION_OPENED"),
+            // Perfil — completar la información de carrera (para estudiantes)
+            Def("Hasta que la muerte los separe","Completaste la información de tu carrera", "CAREER_INFO_COMPLETED")
         };
 
         var existingKeys = dbContext.AchievementDefinitions
